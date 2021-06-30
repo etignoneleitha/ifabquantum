@@ -10,3 +10,6 @@ data/interim/*
 
 # Git
 !.gitkeep
+
+# MAC OS
+.DS_Store 
