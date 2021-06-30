@@ -20,8 +20,8 @@ def create_graph(num_nodes, edge_list):
         print(index_clique)
         solution_state[index_clique] = 1
 
-    solution_state_str = "".join(str(int(_)) for _ in solution_state)
-    return G, solution_state_str
+    solution_max_clique = "".join(str(int(_)) for _ in solution_state)
+    return G, solution_max_clique
 
 
 def draw_graph(G):
