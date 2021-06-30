@@ -12,41 +12,18 @@ from qiskit import Aer, QuantumCircuit, execute
 # VIZ
 from matplotlib import pyplot as plt
 
-# Set global parameters
-s_eigenvalues = [0, 1]
-DEFAULT_PARAMS = {"penalty": 2,
-                  "shots": 1000,
-                  "show_plot": True,
-                  "num_params_grid": 20,
-                  }
-
-
-def draw_graph(G):
-    G_comp = nx.complement(G)
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(8, 4))
-    axes[0].set_title("GRAPH")
-    axes[1].set_title("COMPLEMETARY GRAPH")
-    pos = nx.circular_layout(G)
-    nx.draw_networkx(G, ax=axes[0], pos=pos)
-    pos = nx.circular_layout(G_comp)
-    nx.draw_networkx(G_comp,
-                     ax=axes[1],
-                     node_color="r",
-                     pos=pos)
+from utils.default_params import *
 
 
 def s2z(configuration):
-
     return [1 - 2 * s for s in configuration]
 
 
 def z2s(configuration):
-
     return [(1-z)/2 for z in configuration]
 
 
 def str2list(s):
-
     list_conf = []
     skip = False
     for x in s:
