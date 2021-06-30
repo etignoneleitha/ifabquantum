@@ -1,0 +1,70 @@
+\documentclass[11pt, oneside]{article}   	% use "amsart" instead of "article" for AMSLaTeX format
+\usepackage{geometry}                		% See geometry.pdf to learn the layout options. There are lots.
+\geometry{letterpaper}                   		% ... or a4paper or a5paper or ... 
+%\geometry{landscape}                		% Activate for rotated page geometry
+%\usepackage[parfill]{parskip}    		% Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}				% Use pdf, png, jpg, or eps§ with pdflatex; use eps in DVI mode
+								% TeX will automatically convert eps --> pdf in pdflatex		
+\usepackage{amssymb, amsmath}
+
+
+%SetFonts
+
+%SetFonts
+
+
+\title{Brief Article}
+\author{The Author}
+%\date{}							% Activate to display a given date or no date
+
+\begin{document}
+
+
+%\begin{equation}
+%\mathtt{u1}(\lambda) =
+%\begin{pmatrix}
+%1 & 0 \\
+%0 & e^{i \lambda}
+%\end{pmatrix} 
+%\end{equation}
+
+
+\begin{equation}
+R_z(\phi) = \exp(-i \phi Z/2) = \begin{pmatrix}
+e^{-i \phi / 2} & 0 \\
+0 & e^{i \phi /2}
+\end{pmatrix} = \mathtt{rz}(\phi)
+\end{equation}
+
+
+\begin{equation}
+\exp(-i \phi Z_1 Z_2 / 2) = \mathtt{rzz}(\phi)
+\end{equation}
+
+
+
+\begin{equation}
+H = -\sum\frac{1- Z}{2} + \omega \sum_{\text{compl.}}\frac{1- Z_a}{2} \frac{1- Z_b}{2} \sim\sum\frac{Z}{2} + \frac{\omega}{4} \sum_{\text{compl.}} ( Z_a Z_b - Z_a - Z_b)
+\end{equation}
+
+
+\begin{equation}
+\begin{split}
+\exp [-i \gamma H] &=\exp [-i \gamma Z / 2]  \cdot \exp [-i \gamma\omega Z_a Z_b / 4] \cdot \exp [i \gamma\omega Z_a / 4] \cdot \exp [i \gamma\omega Z_b / 4] \\
+&=\mathtt{rz}(\gamma) \cdot  \mathtt{rzz}(\gamma\omega /2) \cdot\mathtt{rz}(-\gamma\omega / 2)\cdot\mathtt{rz}(-\gamma\omega/2) \\
+&=\mathtt{rz}(\gamma(1-\omega)) \cdot  \mathtt{rzz}(\gamma\omega /2)
+\end{split}
+\end{equation}
+
+
+\bigskip
+
+\begin{equation}
+H_M = \sum X
+\end{equation}
+
+
+\begin{equation}
+\exp[-i \beta H_M] = \exp[-i \beta X  ] = \mathtt{rx}(2\beta)
+\end{equation}
+\end{document}  
