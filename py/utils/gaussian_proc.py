@@ -119,8 +119,6 @@ def bayesian_opt(G,
 
 
 
-
-
 #Allows to change max_iter (see cell below) as well as gtol. It can be straightforwardly extended to other parameters
 class MyGaussianProcessRegressor(GaussianProcessRegressor):
     def __init__(self, *args, max_iter=2e05, gtol=1e-06, **kwargs):

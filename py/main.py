@@ -18,8 +18,6 @@ graphs = create_random_graphs(30, 5, 9, 5, 3)
 
 for k, n_graph in enumerate(graphs):
     # Set graph instance & its complement
-    edge_list = [(0,1), (1,2), (0,2), (2,3), (2,4)]
-    num_nodes = 5
     G, solution_state_str = create_graph(num_nodes, edge_list)
     min_energy = evaluate_cost(G, str2list(solution_state_str), basis = 'S')
     print('Solution: {} with energy: {}'.format(solution_state_str, min_energy))
