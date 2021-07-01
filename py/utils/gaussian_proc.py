@@ -29,7 +29,9 @@ from utils.qaoa import (QAOA)
 def bayesian_opt(G,
                  penalty,
                  shots,
-                 params_bayes):
+                 params_bayes,
+                 seed = 0,
+                 verbose = False):
 
     num_iter_max = params_bayes["num_max_iter_bayes"]
     N_train = params_bayes["N_train"]
@@ -41,8 +43,9 @@ def bayesian_opt(G,
     y_train = []
 
     #seed
-    my_seed = 42
-    np.random.seed(my_seed)
+    if seed:
+        my_seed = seed
+        np.random.seed(my_seed)
 
     for i in range(N_train):
         X = [np.random.uniform(*gamma_extremes), np.random.uniform(*beta_extremes)]
@@ -104,12 +107,14 @@ def bayesian_opt(G,
             X_train.append(next_point_normalized)
             y_next_point,_ = QAOA(G, *next_point)
             y_train.append(y_next_point)
-            print(i, next_point, y_next_point)
+            
+            if verbose:
+                print(i, next_point, y_next_point)
 
             gp.fit(X_train, y_train)
             sample_points.append(list(next_point) + [y_next_point])
 
-    print('reached limit')
+    print('End process')
     return sample_points
 
 
