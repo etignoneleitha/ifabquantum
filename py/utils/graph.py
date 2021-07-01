@@ -37,3 +37,40 @@ def draw_graph(G):
                      ax=axes[1],
                      node_color="r",
                      pos=pos)
+    
+def create_random_graphs(total, 
+                         N_nodes_min,
+                         N_nodes_max, 
+                         M_min,
+                         max_conn):
+    '''
+
+    Parameters
+    ----------
+    total : int
+        Number of random graphs to generate.
+    N_min : int
+        minimum number of nodes
+    N_max : int
+        maximum number of nodes
+    M_min : int
+        minimum number of edges
+    max_conn : int
+        max connectivity
+
+    Returns
+    -------
+    Tuple of graphs N, edges
+
+    '''
+    
+    graphs = []
+    
+    for i in range(total):
+        N_nodes = np.random.choice(range(N_nodes_min, N_nodes_max +1, 1))
+        M_edges = np.random.choice(range(M_min, N_nodes+1, 1))
+        G = nx.gnm_random_graph(N_nodes, M_edges)
+        graphs.append(G)
+    return graphs
+        
+        
