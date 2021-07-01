@@ -1,6 +1,7 @@
 import networkx as nx
 import numpy as np
 from matplotlib import pyplot as plt
+import os
 
 
 # Set graph instance & its complement
@@ -38,17 +39,15 @@ def draw_graph(G):
                      node_color="r",
                      pos=pos)
     
-def create_random_graphs(total, 
-                         N_nodes_min,
+def create_random_graphs(N_nodes_min,
                          N_nodes_max, 
                          M_min,
-                         max_conn):
+                         max_conn,
+                         key_graph):
     '''
 
     Parameters
     ----------
-    total : int
-        Number of random graphs to generate.
     N_min : int
         minimum number of nodes
     N_max : int
@@ -63,14 +62,20 @@ def create_random_graphs(total,
     Tuple of graphs N, edges
 
     '''
-    
-    graphs = []
-    
-    for i in range(total):
+    c = 0
+    while c == 0:
         N_nodes = np.random.choice(range(N_nodes_min, N_nodes_max +1, 1))
         M_edges = np.random.choice(range(M_min, N_nodes+1, 1))
         G = nx.gnm_random_graph(N_nodes, M_edges)
-        graphs.append(G)
-    return graphs
+        
+        degree_list = np.array(G.degree())
+        if max(degree_list[:,1]) > max_conn:   #checks connectivity
+            c=0
+        else:
+            c = 1
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    nx.write_gpickle(G,"../data/processed/networkx_graphs/{}.gpickle".format(key_graph))
+    
+    return G
         
         
