@@ -3,16 +3,12 @@ import numpy as np
 from matplotlib import pyplot as plt
 import os
 
+PATH_GRAPHS = "../data/processed/networkx_graphs/"
 
-# Set graph instance & its complement
-def create_graph(num_nodes, edge_list):
 
-    G = nx.Graph()
-    G.add_nodes_from(range(num_nodes))
-    G.add_edges_from(edge_list)
-
+def find_maxclique(G):
     all_cliques = list(nx.find_cliques(G))
-
+    num_nodes = G.number_of_nodes()
     length_cliques = [len(clique) for clique in all_cliques]
 
     solution_state = np.zeros(num_nodes)
@@ -22,6 +18,25 @@ def create_graph(num_nodes, edge_list):
         solution_state[index_clique] = 1
 
     solution_max_clique = "".join(str(int(_)) for _ in solution_state)
+    
+    return solution_max_clique
+
+
+def create_graph(num_nodes, edge_list):
+
+    G = nx.Graph()
+    G.add_nodes_from(range(num_nodes))
+    G.add_edges_from(edge_list)
+
+    solution_max_clique = find_maxclique(G)
+    return G, solution_max_clique
+
+
+def load_graph_pickle(key_graph):
+    filename = PATH_GRAPHS + "{}.gpickle".format(key_graph) 
+    G = nx.read_gpickle(filename)
+
+    solution_max_clique = find_maxclique(G)
     return G, solution_max_clique
 
 
@@ -74,7 +89,8 @@ def create_random_graphs(N_nodes_min,
         else:
             c = 1
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    nx.write_gpickle(G,"../data/processed/networkx_graphs/{}.gpickle".format(key_graph))
+    filename = PATH_GRAPHS + "{}.gpickle".format(key_graph)
+    nx.write_gpickle(G, filename)
     
     return G
         
