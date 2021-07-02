@@ -13,7 +13,11 @@ params_bayes = {"N_train": 10,
                 }
 penalty = 2
 shots = 1000
-key_graph = np.random.randint(100000)
+if len(sys.argv) > 1:
+    key_graph = int(sys.argv[1])
+else:
+   key_graph = np.random.randint(100000)
+print(key_graph)
 
 graph = create_random_graphs(5, 9, 5, 3, key_graph)
 
