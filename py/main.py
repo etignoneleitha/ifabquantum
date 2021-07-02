@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 from utils.qaoa import grid_search, QAOA, evaluate_cost, str2list
 
 from utils.default_params import *
