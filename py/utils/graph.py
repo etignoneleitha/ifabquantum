@@ -21,7 +21,6 @@ def find_maxclique(G):
     
     return solution_max_clique
 
-
 def create_graph(num_nodes, edge_list):
 
     G = nx.Graph()

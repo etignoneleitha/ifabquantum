@@ -64,48 +64,48 @@ def evaluate_cost(G,
     return cost
 
 
-# def classical_solution(basis=None, show_top=None):
-#
-#     '''
-#     Runs through all 2^n possible configurations and estimates how many max cliques there are and plots one
-#     '''
-#
-#     results = {}
-#
-#     if basis=="S":
-#         eigenvalues = s_eigenvalues #[0, 1] i.e. eigenvalues for |0> ad |1> respectively
-#     elif basis=="Z":
-#         eigenvalues = s2z(s_eigenvalues) #[1,-1] i.e. eigenvalues for |0> ad |1> respectively
-#     else:
-#         raise ValueError('Basis should be specified: it must one of ["S","Z"]')
-#
-#     eigen_configurations = list(product(eigenvalues, repeat=len(G)))
-#     for eigen_configuration in tqdm(eigen_configurations):
-#         results[eigen_configuration] = evaluate_cost(G, eigen_configuration, basis=basis)
-#
-#     print('All possible solutions: \n')
-#     sol = pd.DataFrame(np.unique(list(results.values()), return_counts = True)).T
-#     sol.columns=["energy","occurrencies"]
-#     sol["frequency"]=round(sol["occurrencies"]/sol["occurrencies"].sum()*100,0)
-#     if show_top is not None:
-#         print(sol.head(show_top))
-#     else:
-#         print(sol)
-#     d = dict((k, v) for k, v in results.items() if v == np.min(list(results.values())))
-#     print(f'\nThere are {len(d)} MAXCLIQUE(S) with eigenvalues configuration(s) in basis \"{basis}\": {d}')
-#
-#     fig = plt.subplot(1, 2, 1)
-#     val, counts = np.unique(list(results.values()), return_counts = True)
-#     plt.bar(val, counts)
-#     plt.xlabel('Energy')
-#     plt.ylabel('Counts')
-#     plt.title('Statistics of solutions')
-#
-#     fig = plt.subplot(1, 2, 2)
-#     plt.title('MaxClique')
-#     colors = list(d.keys())[0]
-#     pos = nx.circular_layout(G)
-#     nx.draw_networkx(G, node_color=colors, node_size=200, alpha=1, pos=pos)
+def classical_solution(basis=None, show_top=None):
+
+    '''
+    Runs through all 2^n possible configurations and estimates how many max cliques there are and plots one
+    '''
+
+    results = {}
+
+    if basis=="S":
+        eigenvalues = s_eigenvalues #[0, 1] i.e. eigenvalues for |0> ad |1> respectively
+    elif basis=="Z":
+        eigenvalues = s2z(s_eigenvalues) #[1,-1] i.e. eigenvalues for |0> ad |1> respectively
+    else:
+        raise ValueError('Basis should be specified: it must one of ["S","Z"]')
+
+    eigen_configurations = list(product(eigenvalues, repeat=len(G)))
+    for eigen_configuration in tqdm(eigen_configurations):
+        results[eigen_configuration] = evaluate_cost(G, eigen_configuration, basis=basis)
+
+    print('All possible solutions: \n')
+    sol = pd.DataFrame(np.unique(list(results.values()), return_counts = True)).T
+    sol.columns=["energy","occurrencies"]
+    sol["frequency"]=round(sol["occurrencies"]/sol["occurrencies"].sum()*100,0)
+    if show_top is not None:
+        print(sol.head(show_top))
+    else:
+        print(sol)
+    d = dict((k, v) for k, v in results.items() if v == np.min(list(results.values())))
+    print(f'\nThere are {len(d)} MAXCLIQUE(S) with eigenvalues configuration(s) in basis \"{basis}\": {d}')
+
+    fig = plt.subplot(1, 2, 1)
+    val, counts = np.unique(list(results.values()), return_counts = True)
+    plt.bar(val, counts)
+    plt.xlabel('Energy')
+    plt.ylabel('Counts')
+    plt.title('Statistics of solutions')
+
+    fig = plt.subplot(1, 2, 2)
+    plt.title('MaxClique')
+    colors = list(d.keys())[0]
+    pos = nx.circular_layout(G)
+    nx.draw_networkx(G, node_color=colors, node_size=200, alpha=1, pos=pos)
 
 
 def quantum_algorithm(G,
@@ -209,8 +209,9 @@ def grid_search(G,
 
         points = [x for x in np.dstack((X,Y,Q)).reshape(-1,3)]
         plt.show()
+    np.savetxt('../data/raw/Grid_search_{}x{}.dat'.format(num_params_grid, num_params_grid), points)
 
-        return points
+    return points
 
 
 def plot_distribution(freq_dict):

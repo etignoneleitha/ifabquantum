@@ -5,6 +5,7 @@ from utils.qaoa import grid_search, QAOA, evaluate_cost, str2list
 from utils.default_params import *
 from utils.gaussian_proc import bayesian_opt
 from utils.graph import create_graph, create_random_graphs
+from utils.GD import gradient_descent, compare_methods
 
 #Set global parameters
 params_bayes = {"N_train": 10,
@@ -20,19 +21,19 @@ else:
    key_graph = np.random.randint(100000)
 print(key_graph)
 
-graph = create_random_graphs(5, 9, 5, 3, key_graph)
+#graph = create_random_graphs(5, 9, 5, 3, key_graph)
+graph, _ = create_graph(5, [[0,1], [1,2], [0,2], [2,3], [2,4]])
 
 # Set graph instance & its complement
 G, solution_state_str = create_graph(len(graph.nodes), graph.edges)
 min_energy = evaluate_cost(G, str2list(solution_state_str), basis = 'S')
 #print('Solution: {} with energy: {}'.format(solution_state_str, min_energy))
 
-# points = grid_search(G, 20, penalty=penalty)
-
+compare_methods(G, 50, ['Bayes', 'FD', 'ADAM'])
 # run average: 3*n_iter array with average energy, best state prob,
 # approx ratio for every iteration
 # all_run_average: a list of run_average for different n. of initial points
-
+exit()
 N_average = 20
 all_run_average = []
 for n_start in [1, 2, 5, 10]:  
