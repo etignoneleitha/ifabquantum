@@ -3,8 +3,9 @@ import cmath
 import matplotlib.pyplot as plt
 from scipy.linalg import expm
 from numpy.linalg import multi_dot
-
+import itertools
 import functools
+from tqdm import tqdm
 import networkx as nx
 
 def create_random_graph(n, p, seed = None):
@@ -103,4 +104,65 @@ def max_cut_cost(G, bitstring):
     for edge in G.edges:
         C +=  (1-var[edge[0]]*var[edge[1]])/2
     return C  
+
+def classical_solution(G, hamiltonian, omega = 0, verbose = 0):    
+    '''
+    Runs on all 2^n configurations of the graph to find the maxclique(s)
+
+    Parameters
+    ----------
+    G : nx graph
+        the graph to estimate the max_clique
+    hamiltonian : string
+        Decide which hamiltonian cost is defined on the graph
+    verbose : int
+        What to print
+        0: nothing
+        1: print info
+        2: plot graph
+        The default is 0.
+
+    Returns
+    -------
+    d : dict of floats.
+        the maxclique(s)
+
+    '''
+    
+    #Evaluate for every possible configuration
+    lst = list(itertools.product([0, 1], repeat=len(G)))
+    results = {}
+    for i in tqdm(range(2**len(G))):
+        if hamiltonian == 'maxclique':
+            results[lst[i]] = max_clique_cost(G, omega, np.array(lst[i]))
+        if hamiltonian == 'maxcut':
+            results[lst[i]] = max_cut_cost(G, np.array(lst[i]))
+    
+    sol = np.unique(list(results.values()), return_counts = True)
+    if verbose>0:
+        print('All possible solutions: \n')
+        print(sol[0])
+        print(sol[1])
+        
+    d = dict((k, v) for k, v in results.items() if v == np.min(list(results.values())))
+    
+    if verbose>0:
+        print('There are {} MAXCLIQUE(S) with energy: \n'.format(len(d)), d)
+    
+    if verbose>1:
+        fig = plt.figure(figsize=(4, 4))
+        val, counts = np.unique(list(results.values()), return_counts = True)
+        plt.bar(val, counts)
+        plt.xlabel('Energy')
+        plt.ylabel('Counts')
+        plt.title('Statistics of solutions')
+    
+        #PLot one of the largest cliques
+        fig = plt.figure(figsize = (2,2))
+        plt.title('MaxClique')
+        colors       = list(d.keys())[0]
+        pos          = nx.circular_layout(G)
+        nx.draw_networkx(G, node_color=colors, node_size=200, alpha=1, pos=pos)
+    
+    return d
     
