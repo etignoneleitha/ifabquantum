@@ -87,8 +87,12 @@ def simulate_QAOA_fixed_beta(params):
 
 running_params = []
 def callbackF(X):
+<<<<<<< HEAD
     running_params.append(X)
     
+=======
+   running_params.append(X)
+>>>>>>> a2a23960e79622ffc428b9d441b4f58689f7c735
 omega = 2
 
 N = 8

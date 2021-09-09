@@ -4,9 +4,13 @@ __pycache__
 .pytest_cache/
 
 # Data
-data/raw/*
-data/processed/*
-data/interim/*
+# data/raw/*
+# data/processed/*
+# data/interim/*
 
 # Git
 !.gitkeep
+
+# MAC OS
+.DS_Store
+ 
