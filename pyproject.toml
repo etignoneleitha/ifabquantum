@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "qaoa-pipeline"
+version = "0.1.0"
+description = "hybrid pipeline for qaoa"
+authors = ["Simone <simone.tibaldi2@unibo.it>", "Davide <davide.vodola@unibo.it>", "Federico <federico.dellanna2@unibo.it>" , "Edoardo <edoardo.tignone@leitha.eu>", "Elisa <elisa.ercolessi@unibo.it>"]
+
+[tool.poetry.dependencies]
+python = "~3.7.1"
+numpy = "1.21.3"
+pandas = "1.3.4"
+scipy = "1.7.1"
+scikit-learn = "1.0.1"
+tqdm = "4.62.3"
+networkx = "2.6.3"
+python-igraph = "0.9.8"
+matplotlib = "3.4.3"
+qutip = "4.6.2"
+pulser = "0.3.2"
+qiskit = "0.31.0"
+tensorflow = "2.7.0"
+tensorflow-probability = "0.15.0"
+zeus-mcmc = "^2.4.1"
+
+[tool.poetry.scripts]
+main = "src.main_qutip:main"
+
+[build-system]
+requires = ["poetry=1.1.4"]
+build-backend = "poetry.masonry.api"
