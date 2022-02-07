@@ -335,7 +335,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
 #           state, extra = kernel.one_step(state, extra)
 #           samples.append(state)
         print('end slice sampling')
-        samples = samples.numpy()
+        samples = samples[0].numpy()
         samples = samples[-N_points:] #taking the last N_points
         
         return samples
@@ -344,7 +344,6 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
     def mc_acq_func(self, x, *args):
         ''' Averages the value of the acq_func for different sets of hyperparameters chosen by pick_hyperparameters
         method '''
-
         hyper_params = args[-1]
         acq_func_values = []
         for params in hyper_params:
