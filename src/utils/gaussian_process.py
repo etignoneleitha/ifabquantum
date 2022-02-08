@@ -50,7 +50,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                          n_restarts_optimizer (how many times the kernel opt is performed)
                          normalize_y: standard is yes
         '''
-        alpha = 10e-10
+        alpha = 10e-8
         super().__init__(alpha = alpha, *args, **kwargs)
         self.max_iter = max_iter
         self.gtol = gtol
