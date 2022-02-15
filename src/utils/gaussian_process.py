@@ -270,11 +270,6 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
             sign = 1.0
         if isinstance(x[0], float):
             x = np.reshape(x, (1, -1))
-        print('predicting at ')
-        print(x)
-        print('with kernel and cov matrix')
-        print(self.kernel_)
-        print(self.get_covariance_matrix())
         f_x, sigma_x = self.predict(x, return_std=True)
 
         f_prime = self.y_best #current best value
@@ -481,8 +476,6 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         K = self.kernel_(self.X)
         K[np.diag_indices_from(K)] += self.alpha
         eigenvalues, eigenvectors = np.linalg.eig(K)
-        print('cov mat: ',K)
-        print('with eigenvalues: ', eigenvalues)
         
         return K, eigenvalues
 
