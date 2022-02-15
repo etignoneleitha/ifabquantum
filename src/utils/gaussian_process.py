@@ -328,7 +328,8 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                                             step_size=0.05,
                                             max_doublings=20),
                                         num_burnin_steps=0,
-                                        trace_fn=None), 
+                                        trace_fn=None,
+                                        seed = 10), 
         # tfd = tfp.distributions
 # 
 #         kernel = tfp.mcmc.SliceSampler(tfd.Distribution(self.log_marginal_likelihood), step_size=1.0,  max_doublings=5)
