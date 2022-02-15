@@ -322,7 +322,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print('begin slice sampling')
         samples = tfp.mcmc.sample_chain(
                                         num_results=100,
-                                        current_state=[],
+                                        current_state=np.ones(len(self.kernel_.theta)),
                                         kernel=tfp.mcmc.SliceSampler(
                                             self.log_marginal_likelihood,
                                             step_size=0.05,
