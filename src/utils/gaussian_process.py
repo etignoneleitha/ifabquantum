@@ -270,6 +270,11 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
             sign = 1.0
         if isinstance(x[0], float):
             x = np.reshape(x, (1, -1))
+        print('predicting at ')
+        print(x)
+        print('with kernel and cov matrix')
+        print(self.kernel_)
+        print(self.get_covariance_matrix())
         f_x, sigma_x = self.predict(x, return_std=True)
 
         f_prime = self.y_best #current best value
@@ -350,7 +355,8 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         for params in hyper_params:
             self.kernel_.theta = params
             acq_func_values.append(self.acq_func(x, *args))
-
+        
+        exit()
         return np.mean(acq_func_values)
 
     def bayesian_opt_step(self, method = 'DIFF-EVOL', init_pos = None):
@@ -449,7 +455,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
 
         if method == 'DIFF-EVOL':
             if DEFAULT_PARAMS['diff_evol_func'] == 'mc':
-                best_params = np.array(self.pick_hyperparameters(50, DEFAULT_PARAMS['length_scale_bounds'], DEFAULT_PARAMS['constant_bounds']))
+                best_params = np.array(self.pick_hyperparameters(10, DEFAULT_PARAMS['length_scale_bounds'], DEFAULT_PARAMS['constant_bounds']))
                 diff_evol_args = [-1, best_params]
                 fun = self.mc_acq_func
             else:
