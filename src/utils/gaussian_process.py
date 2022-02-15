@@ -353,8 +353,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print('La funzione verra valutata nei seguenti punti ')
         print(hyper_params)
         for params in hyper_params:
-            self.kernel_.set_params(**{'k1__constant_value': params[0]})
-            self.kernel_.set_params(**{'k2__length_scale': params[1]})
+            self.kernel_.theta = params
             acq_func_values.append(self.acq_func(x, *args))
 
         return np.mean(acq_func_values)
