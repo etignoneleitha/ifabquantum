@@ -287,7 +287,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
 
 
     def minus_log_likelihood(self, x): 
-        return -1*self.log_marginal_kielihood
+        return -1*self.log_marginal_likelihood()
 
     def pick_hyperparameters(self, N_points, bounds_elle, bounds_sigma):
         ''' Generates array of (N_points,2) random hyperaparameters inside given bounds
