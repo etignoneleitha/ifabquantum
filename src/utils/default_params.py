@@ -12,7 +12,7 @@ DEFAULT_PARAMS = {"penalty": 2,
                   "nu" : 1.5,
                   "max_iter_lfbgs": 50000,
                   "kernel_optimizer":None,#'fmin_l_bfgs_b', #monte_carlo', #'fmin_l_bfgs_b',
-                  "diff_evol_func":  'mc', #None, #None mc = monte carlo con tensorflow probability
+                  "diff_evol_func":'mc', #None, #None mc = monte carlo con tensorflow probability
                   "n_restart_kernel_optimizer":9,
                   "distance_conv_tol": 0.01
                   }

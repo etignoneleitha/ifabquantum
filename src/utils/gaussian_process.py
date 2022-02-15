@@ -264,9 +264,8 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         *args: the sign of the acquisition function (in case you have to minimize -acq fun)
 
         '''
-        self = args[0]
         try:
-            sign = args[1]
+            sign = args[0]
         except:
             sign = 1.0
         if isinstance(x[0], float):
@@ -454,7 +453,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                 fun = self.mc_acq_func
             else:
                 fun = self.acq_func
-                diff_evol_args = (self, -1)
+                diff_evol_args =  [-1]
             with DifferentialEvolutionSolver(fun,
                                             bounds = [(0,1), (0,1)]*depth,
                                             callback = None,
