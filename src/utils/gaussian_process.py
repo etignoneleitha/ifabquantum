@@ -327,7 +327,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                                             self.log_marginal_likelihood,
                                             step_size=1.0,
                                             max_doublings=5),
-                                        num_burnin_steps=50,
+                                        num_burnin_steps=500,
                                         trace_fn=None), 
         # tfd = tfp.distributions
 # 
