@@ -342,6 +342,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         samples = samples[0].numpy()
         print('i punti trovati sono:')
         print(samples)
+        exit()
         samples = samples[-N_points:] #taking the last N_points
         
         return samples
