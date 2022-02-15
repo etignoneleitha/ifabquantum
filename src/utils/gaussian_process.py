@@ -321,13 +321,13 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         dtype = np.float32
         print('begin slice sampling')
         samples = tfp.mcmc.sample_chain(
-                                        num_results=100,
+                                        num_results=500,
                                         current_state=np.ones(len(self.kernel_.theta)),
                                         kernel=tfp.mcmc.SliceSampler(
                                             self.log_marginal_likelihood,
                                             step_size=0.05,
                                             max_doublings=20),
-                                        num_burnin_steps=500,
+                                        num_burnin_steps=0,
                                         trace_fn=None), 
         # tfd = tfp.distributions
 # 
@@ -340,6 +340,8 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
 #           samples.append(state)
         print('end slice sampling')
         samples = samples[0].numpy()
+        print('i punti trovati sono:')
+        print(samples)
         samples = samples[-N_points:] #taking the last N_points
         
         return samples
