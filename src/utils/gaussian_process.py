@@ -322,7 +322,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print('begin slice sampling')
         samples = tfp.mcmc.sample_chain(
                                         num_results=100,
-                                        current_state=np.ones(len(self.kernel_.theta)),
+                                        current_state=[],
                                         kernel=tfp.mcmc.SliceSampler(
                                             self.log_marginal_likelihood,
                                             step_size=0.05,
@@ -353,7 +353,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print('La funzione verra valutata nei seguenti punti ')
         print(hyper_params)
         for params in hyper_params:
-            self.kernel_.theta = params
+            self.kernel_.theta = np.log(params)
             acq_func_values.append(self.acq_func(x, *args))
         
         exit()
