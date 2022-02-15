@@ -250,7 +250,7 @@ class qaoa_qutip(object):
         X = hypercube_sampler.random(N_points)
         l_bounds = np.repeat(angles_bounds[:,0], depth)
         u_bounds = np.repeat(angles_bounds[:,1], depth)
-        X = qmc.scale(X, l_bounds, u_bounds).astype(int)
+        X = qmc.scale(X, l_bounds, u_bounds)
         X = X.tolist()
         Y = []
         for x in X:
