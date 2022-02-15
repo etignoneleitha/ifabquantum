@@ -343,7 +343,6 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         samples = samples[0].numpy()
         print('i punti trovati sono:')
         print(samples)
-        exit()
         samples = samples[-N_points:] #taking the last N_points
         
         return samples
@@ -357,10 +356,9 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print('La funzione verra valutata nei seguenti punti ')
         print(hyper_params)
         for params in hyper_params:
-            self.kernel_.theta = np.log(params)
+            self.kernel_.theta = params
             acq_func_values.append(self.acq_func(x, *args))
         
-        exit()
         return np.mean(acq_func_values)
 
     def bayesian_opt_step(self, method = 'DIFF-EVOL', init_pos = None):
