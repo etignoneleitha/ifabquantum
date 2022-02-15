@@ -92,7 +92,6 @@ gp = MyGaussianProcessRegressor(kernel=kernel,
 
 X_train, y_train = qaoa.generate_random_points(nwarmup, depth, param_range)
 
-print(X_train)
 exit()
 
 gp.fit(X_train, y_train)
