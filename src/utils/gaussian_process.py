@@ -286,6 +286,9 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         return sign*alpha_function
 
 
+    def minus_log_likelihood(self, x): 
+        return -1*self.log_marginal_kielihood
+
     def pick_hyperparameters(self, N_points, bounds_elle, bounds_sigma):
         ''' Generates array of (N_points,2) random hyperaparameters inside given bounds
         '''
@@ -324,7 +327,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                                         num_results=100,
                                         current_state=np.ones(len(self.kernel_.theta)),
                                         kernel=tfp.mcmc.SliceSampler(
-                                            self.log_marginal_likelihood,
+                                            self.minus_log_marginal_likelihood,
                                             step_size=0.1,
                                             max_doublings=20),
                                         num_burnin_steps=500,
