@@ -273,7 +273,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print('current kernel')
         print(self.kernel_)
         print('with covariance matrix:')
-        print(self.covariance_matrix)
+        print(self.get_covariance_matrix())
         f_x, sigma_x = self.predict(x, return_std=True)
 
         f_prime = self.y_best #current best value
@@ -474,7 +474,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         next_point = self.scale_up(next_point)
         return next_point, results.nit, average_norm_distance_vectors, std_population_energy
 
-    def covariance_matrix(self):
+    def get_covariance_matrix(self):
         K = self.kernel_(self.X)
         K[np.diag_indices_from(K)] += self.alpha
         eigenvalues, eigenvectors = np.linalg.eig(K)
