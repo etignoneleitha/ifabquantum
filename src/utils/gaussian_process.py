@@ -274,6 +274,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print(self.kernel_)
         print('with covariance matrix:')
         print(self.get_covariance_matrix())
+        exit()
         f_x, sigma_x = self.predict(x, return_std=True)
 
         f_prime = self.y_best #current best value
@@ -484,7 +485,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         return K, eigenvalues
 
     def plot_covariance_matrix(self, show = True, save = False):
-        K = self.covariance_matrix()
+        K = self.get_covariance_matrix()
         fig = plt.figure()
         im = plt.imshow(K, origin = 'upper')
         plt.colorbar(im)
