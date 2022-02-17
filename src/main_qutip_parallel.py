@@ -120,7 +120,6 @@ print('with kernel')
 print(gp.kernel_)
 print('\n and matrix')
 print(gp.get_covariance_matrix())
-exit()
 gp.predict([[0.8562, 0.256 ]], return_std = True)
 exit()
 
