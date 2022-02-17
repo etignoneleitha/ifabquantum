@@ -112,6 +112,14 @@ print('\n\n')
 print('So starting cholesky is')
 print(gp.L_)
 print('and covariance LL^\dag:')
+print(gp.L_ @ np.transpose(gp.L_))
+print('\n\n')
+print('REPRODUCING ERROR')
+gp.kernel_.theta = [2.2945, -0.8897]
+gp.predict([[0.8562, 0.256 ]])
+exit()
+
+data = []
 for i_tr, x in enumerate(X_train):
     fin_state, mean_energy, variance, fidelity_tot =  qaoa.quantum_algorithm(x)
     data.append([i_tr]
