@@ -74,7 +74,7 @@ gs_energy, gs_state, degeneracy = qaoa.gs_en, qaoa.gs_states, qaoa.deg
 print('Information on the hamiltonian')
 print('GS energy: ',gs_energy)
 print('GS degeneracy: ', degeneracy)
-print('GS: ', qaoa.gs_binary)
+print('GS: ', qaoa.gs_binary, '\n\n\n')
 
 DEFAULT_PARAMS["seed"] = seed + i_trial
 output_folder = Path(__file__).parents[1] / "output"
@@ -95,6 +95,10 @@ gp = MyGaussianProcessRegressor(kernel=kernel,
 
 X_train, y_train = qaoa.generate_random_points(nwarmup, depth, param_range)
 
+
+print('Random generated X train:', X_train)
+print('With energies: ', y_train)
+print('\n\n\n')
 
 gp.fit(X_train, y_train)
 
