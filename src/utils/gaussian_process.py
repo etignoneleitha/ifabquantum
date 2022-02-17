@@ -160,7 +160,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                                                  bounds=bounds)
         elif self.optimizer is None:
             theta_opt = initial_theta
-            func_min = 0
+            func_min = obj
         else:
             raise ValueError("Unknown optimizer %s." % self.optimizer)
         print('L ottimiz ritorna il valore migliore ', theta_opt)
@@ -484,8 +484,6 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         K = self.kernel_(self.X)
         K[np.diag_indices_from(K)] += self.alpha
         eigenvalues, eigenvectors = np.linalg.eig(K)
-        print('cov mat: ',K)
-        print('with eigenvalues: ', eigenvalues)
         
         return K, eigenvalues
 

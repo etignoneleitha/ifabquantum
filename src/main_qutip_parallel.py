@@ -107,8 +107,15 @@ gp.fit(X_train, y_train)
 print('Just fitted data so now we have kernel and kernel_: ')
 print(gp.kernel)
 print(gp.kernel_)
-exit()
 
+print('\n\n')
+print('So starting cholesky is')
+print(gp.L_)
+print('and covariance LL^\dag:')
+print(gp.L_ @ gp.L)
+print('to compare with K:')
+print(gp.get_covariance_matrix())
+exit()
 data = []
 for i_tr, x in enumerate(X_train):
     fin_state, mean_energy, variance, fidelity_tot =  qaoa.quantum_algorithm(x)
