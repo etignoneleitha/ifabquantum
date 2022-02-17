@@ -116,6 +116,7 @@ print(gp.L_ @ np.transpose(gp.L_))
 print('\n\n')
 print('REPRODUCING ERROR')
 gp.kernel_.theta = [2.2945, -0.8897]
+print(gp.kernel_)
 gp.predict([[0.8562, 0.256 ]])
 exit()
 
