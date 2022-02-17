@@ -95,7 +95,6 @@ gp = MyGaussianProcessRegressor(kernel=kernel,
 
 print('Created gaussian process istance with starting kernel')
 print(gp.kernel)
-print(gp.kernel_)
 X_train, y_train = qaoa.generate_random_points(nwarmup, depth, param_range)
 
 
@@ -104,6 +103,11 @@ print('With energies: ', y_train)
 print('\n\n\n')
 
 gp.fit(X_train, y_train)
+
+print('Just fitted data so now we have kernel and kernel_: ')
+print(gp.kernel)
+print(gp.kernel_)
+exit()
 
 data = []
 for i_tr, x in enumerate(X_train):
