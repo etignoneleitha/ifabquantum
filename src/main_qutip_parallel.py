@@ -114,9 +114,12 @@ print(gp.L_)
 print('and covariance LL^\dag:')
 print(gp.L_ @ np.transpose(gp.L_))
 print('\n\n')
-print('REPRODUCING ERROR')
+print('REPRODUCING ERROR\n')
 gp.kernel_.theta = [2.2945, -0.8897]
+print('with kernel')
 print(gp.kernel_)
+print('\n and matrix')
+print(gp.get_covariance_matrix())
 gp.predict([[0.8562, 0.256 ]])
 exit()
 
