@@ -71,7 +71,10 @@ G = create_random_regular_graph(num_nodes, degree=3, seed=1)
 qaoa = qaoa_qutip(G, problem="MAX-CUT")
 gs_energy, gs_state, degeneracy = qaoa.gs_en, qaoa.gs_states, qaoa.deg
 
-print(gs_energy, degeneracy, qaoa.gs_binary)
+print('Information on the hamiltonian')
+print('GS energy: ',gs_energy)
+print('GS degeneracy: ', degeneracy)
+print('GS: ', qaoa.gs_binary)
 
 DEFAULT_PARAMS["seed"] = seed + i_trial
 output_folder = Path(__file__).parents[1] / "output"
