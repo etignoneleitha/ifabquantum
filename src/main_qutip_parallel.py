@@ -93,6 +93,9 @@ gp = MyGaussianProcessRegressor(kernel=kernel,
                                 max_iter=1e4
                                 )
 
+print('Created gaussian process istance with starting kernel')
+print(gp.kernel)
+print(gp.kernel_)
 X_train, y_train = qaoa.generate_random_points(nwarmup, depth, param_range)
 
 
