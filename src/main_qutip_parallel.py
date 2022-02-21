@@ -121,7 +121,7 @@ print(gp.kernel_)
 print('\n and matrix')
 print(gp.get_covariance_matrix())
 gp.predict([[0.8562, 0.256 ]], return_std = True)
-exit()
+
 
 data = []
 for i_tr, x in enumerate(X_train):

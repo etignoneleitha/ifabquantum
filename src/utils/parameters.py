@@ -6,7 +6,7 @@ def parse_command_line():
 
     parser.add_argument('--seed',
                         type=int,
-                        default=12,
+                        default=14,
                         help="Seed for the random number generators"
                         )
 
