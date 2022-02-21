@@ -275,6 +275,9 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print('with kernel and cov matrix')
         print(self.kernel_)
         print(self.get_covariance_matrix())
+        print('or covarianc eof cholesky:')
+        print(self.get_covariance_matrix())
+        
         f_x, sigma_x = self.predict(x, return_std=True)
         
 
@@ -448,7 +451,15 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         eigenvalues, eigenvectors = np.linalg.eig(K)
         
         return K, eigenvalues
-
+        
+    def get_covariance_matrix_cholesky(self):
+        K = self.L_ @ np.transpose(self.L_)       
+        K[np.diag_indices_from(K)] += self.alpha
+        eigenvalues, eigenvectors = np.linalg.eig(K)
+        
+        return K, eigenvalues, np.inv(K)
+        
+        
     def plot_covariance_matrix(self, show = True, save = False):
         K = self.get_covariance_matrix()
         fig = plt.figure()
