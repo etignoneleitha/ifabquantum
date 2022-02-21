@@ -277,7 +277,6 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print(self.get_covariance_matrix())
         f_x, sigma_x = self.predict(x, return_std=True)
         
-        exit()
 
         f_prime = self.y_best #current best value
 
