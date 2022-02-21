@@ -290,35 +290,6 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
     def pick_hyperparameters(self, N_points, bounds_elle, bounds_sigma):
         ''' Generates array of (N_points,2) random hyperaparameters inside given bounds
         '''
-        '''
-        elle = np.random.uniform(low = bounds_elle[0], high=bounds_elle[1], size=(N_points,))
-        sigma = np.random.uniform(low = bounds_sigma[0], high=bounds_sigma[1], size=(N_points,))
-        hyper_params = list(zip(elle,sigma))
-
-        lml = np.array([self.log_marginal_likelihood(np.log(hyper_param)) for hyper_param in hyper_params])
-        idx_max_values = np.argpartition(lml, -50)[-50:] #takes the 50 indexes with largest value of lml
-        best_params = hyper_params[idx_max_values]
-        '''
-
-        '''
-            ZEUS
-        nsteps, nwalkers, ndim = 100, 10, len(self.kernel_.theta)
-        start = np.random.uniform(0.1,1,(nwalkers,ndim))
-
-        sampler = zeus.EnsembleSampler(nwalkers, ndim, self.log_marginal_likelihood)
-        print("start sampli")
-        sampler.run_mcmc(start, nsteps)
-        print("end sampli")
-        hyper_params = sampler.get_chain(flat=True)[:N_points]
-        print("hhhh")
-        print(hyper_params)
-#         try:
-#             positive_hyper_params = hyper_params[hyper_params[:,0] > 0][:N_points]
-#         except:
-#              positive_hyper_params = hyper_params[hyper_params[:,0] > 0]
-#              print('Only {} hyper_params where selected'.format(len(positive_hyper_params)))
-        return hyper_params
-        '''
         dtype = np.float32
         print('begin slice sampling')
         samples = tfp.mcmc.sample_chain(
@@ -331,15 +302,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                                         num_burnin_steps=0,
                                         trace_fn=None,
                                         seed = 10), 
-        # tfd = tfp.distributions
-# 
-#         kernel = tfp.mcmc.SliceSampler(tfd.Distribution(self.log_marginal_likelihood), step_size=1.0,  max_doublings=5)
-#         state = tf.constant([1,1], dtype = dtype)
-#         extra = kernel.bootstrap_results(state)
-#         samples = []
-#         for _ in range(10):
-#           state, extra = kernel.one_step(state, extra)
-#           samples.append(state)
+
         print('end slice sampling')
         samples = samples[0].numpy()
         print('i punti trovati sono:')

@@ -115,76 +115,18 @@ print('and covariance LL^\dag:')
 print(gp.L_ @ np.transpose(gp.L_))
 print('\n\n')
 print('REPRODUCING ERROR\n')
+gp.kernel_.theta = [2.2945, -0.8897]
+print('with kernel')
+print(gp.kernel_)
+print('\n and matrix')
+print(gp.get_covariance_matrix())
+gp.predict([[0.8562, 0.256 ]], return_std = True)
 
 
-data = []
-for i_tr, x in enumerate(X_train):
-    fin_state, mean_energy, variance, fidelity_tot =  qaoa.quantum_algorithm(x)
-    data.append([i_tr]
-                + x
-                + [y_train[i_tr],
-                fidelity_tot,
-                variance,
-                gp.kernel_.get_params()['k2__length_scale'],
-                gp.kernel_.get_params()['k1__constant_value'], 0, 0, 0, 0, 0, 0, 0])
+exit()
 
-### BAYESIAN OPTIMIZATION
 
-print('Training ...')
 
-for i in range(nbayes):
-    
-    start_time = time.time()
-    next_point, n_it, avg_sqr_distances, std_pop_energy = gp.bayesian_opt_step(method)
-    fin_state, mean_energy, variance, fidelity_tot = qaoa.quantum_algorithm(next_point)
-    bayes_time = time.time() - start_time
-    y_next_point = mean_energy
-    qaoa_time = time.time() - start_time - bayes_time
-    fidelity = fidelity_tot
-    corr_length = gp.kernel_.get_params()['k2__length_scale']
-    constant_kernel = gp.kernel_.get_params()['k1__constant_value']
-    log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
-    gp.fit(next_point, y_next_point)
-    kernel_time = time.time() - start_time - qaoa_time - bayes_time
-    step_time = time.time() - start_time
-    new_data = ([i + nwarmup]
-                + next_point
-                + [y_next_point,
-                fidelity,
-                variance,
-                corr_length,
-                constant_kernel,
-                std_pop_energy,
-                avg_sqr_distances,
-                n_it,
-                bayes_time,
-                qaoa_time,
-                kernel_time,
-                step_time
-                ])
-    data.append(new_data)
-    print(i + nwarmup,'/', nbayes, mean_energy, variance, fidelity_tot, *next_point)
 
-    format_list = ['%+.8f '] * len(new_data)
-    format_list[0] = '% 4d '
-    format_list[-5] = '% 8d '
-    fmt_string = "".join(format_list)
-    
-    folder_name = file_name.split('.')[0]
-    folder = os.path.join(output_folder, folder_name)
-    os.makedirs(folder, exist_ok = True)
-    np.savetxt(folder +"/"+ file_name, data, fmt = fmt_string, header  ="".join(results_structure))
-    np.savetxt(folder +"/"+ "step_{}_kernel_opt.dat".format(i), gp.samples)
-    np.savetxt(folder +"/"+ "step_{}_likelihood_grid.dat".format(i), log_marginal_likelihood_grid)
 
-best_x, best_y, where = gp.get_best_point()
 
-data.append(data[where])
-
-np.savetxt(folder +"/"+ file_name,
-           np.array(data),
-           fmt=fmt_string,
-           header="".join(results_structure)
-           )
-print('Best point: ' , data[where])
-print('time: ', time.time() - global_time)
