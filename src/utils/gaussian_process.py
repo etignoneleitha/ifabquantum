@@ -294,7 +294,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         ''' Generates array of (N_points,2) random hyperaparameters inside given bounds
         '''
         dtype = np.float32
-        init_state = np.ones(1) # np.ones(len(self.kernel_.theta))
+        init_state = np.ones(2) # np.ones(len(self.kernel_.theta))
         print('begin slice sampling')
         samples = tfp.mcmc.sample_chain(
                                         num_results=500,
