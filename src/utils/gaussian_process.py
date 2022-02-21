@@ -294,10 +294,11 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         ''' Generates array of (N_points,2) random hyperaparameters inside given bounds
         '''
         dtype = np.float32
+        init_state = np.ones(1) # np.ones(len(self.kernel_.theta))
         print('begin slice sampling')
         samples = tfp.mcmc.sample_chain(
                                         num_results=500,
-                                        current_state=np.ones(len(self.kernel_.theta)),
+                                        current_state=init_state,
                                         kernel=tfp.mcmc.SliceSampler(
                                             self.log_marginal_likelihood,
                                             step_size=0.05,
@@ -457,7 +458,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         K[np.diag_indices_from(K)] += self.alpha
         eigenvalues, eigenvectors = np.linalg.eig(K)
         
-        return K, eigenvalues, np.inv(K)
+        return K, eigenvalues, np.linalg.inv(K)
         
         
     def plot_covariance_matrix(self, show = True, save = False):
