@@ -275,8 +275,8 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print('with kernel and cov matrix')
         print(self.kernel_)
         print(self.get_covariance_matrix())
-        print('or covarianc eof cholesky:')
-        print(self.get_covariance_matrix())
+        print('or covariance of cholesky:')
+        print(self.get_covariance_matrix_cholesky())
         
         f_x, sigma_x = self.predict(x, return_std=True)
         
