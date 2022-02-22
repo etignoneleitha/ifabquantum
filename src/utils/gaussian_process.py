@@ -270,13 +270,6 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
             sign = 1.0
         if isinstance(x[0], float):
             x = np.reshape(x, (1, -1))
-        print('predicting at ')
-        print(x)
-        print('with kernel and cov matrix')
-        print(self.kernel_)
-        print(self.get_covariance_matrix())
-        print('or covariance of cholesky:')
-        print(self.get_covariance_matrix_cholesky())
         
         f_x, sigma_x = self.predict(x, return_std=True)
         
@@ -321,16 +314,10 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         method '''
         hyper_params = args[-1]
         acq_func_values = []
-        print('La funzione verra valutata nei seguenti punti ')
-        print(hyper_params)
         for params in hyper_params:
             self.kernel.theta = params
             super().fit(self.X, self.Y)
             acq_func_values.append(self.acq_func(x, *args))
-        print('otteniamo questi valori dell acq func')
-        print(acq_func_values)
-        print('che mediati danno')
-        print(np.mean(acq_func_values))
         
         return np.mean(acq_func_values)
 
