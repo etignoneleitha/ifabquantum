@@ -109,11 +109,11 @@ print(gp.kernel)
 print(gp.kernel_)
 
 print('\n\n')
-print('So starting cholesky is')
-print(gp.L_)
-print('and covariance LL^\dag:')
-print(gp.L_ @ np.transpose(gp.L_))
-print('\n\n')
+print('Now covariance LL^\dag:')
+print('or')
+print(gp.get_covariance_matrix_cholesky())
+print('\ncompared to')
+print(gp.get_covariance_matrix())
 print('REPRODUCING ERROR\n')
 
 

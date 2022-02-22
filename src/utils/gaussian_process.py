@@ -325,6 +325,10 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print(hyper_params)
         for params in hyper_params:
             self.kernel_.theta = params
+            print('now kernel_ is')
+            print(self.kernel_)
+            print('and kernel is')
+            print(self.kernel)
             acq_func_values.append(self.acq_func(x, *args))
         
         exit()
