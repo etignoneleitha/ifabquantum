@@ -325,7 +325,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print(hyper_params)
         for params in hyper_params:
             self.kernel.theta = params
-            self.fit(self.X)
+            super().fit(self.X, self.Y)
             print('now kernel_ is')
             print(self.kernel_)
             print('and kernel is')
