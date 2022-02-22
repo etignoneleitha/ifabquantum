@@ -324,7 +324,8 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print('La funzione verra valutata nei seguenti punti ')
         print(hyper_params)
         for params in hyper_params:
-            self.kernel_.theta = params
+            self.kernel.theta = params
+            self.fit(self.X)
             print('now kernel_ is')
             print(self.kernel_)
             print('and kernel is')
@@ -430,7 +431,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
 
         if method == 'DIFF-EVOL':
             if DEFAULT_PARAMS['diff_evol_func'] == 'mc':
-                best_params = np.array(self.pick_hyperparameters(10, DEFAULT_PARAMS['length_scale_bounds'], DEFAULT_PARAMS['constant_bounds']))
+                best_params = np.array(self.pick_hyperparameters(1, DEFAULT_PARAMS['length_scale_bounds'], DEFAULT_PARAMS['constant_bounds']))
                 diff_evol_args = [-1, best_params]
                 fun = self.mc_acq_func
             else:
