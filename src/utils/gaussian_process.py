@@ -309,8 +309,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                                               step_size=0.1,
                                               num_leapfrog_steps=10),
                                         num_burnin_steps=0,
-                                        trace_fn=None,
-                                        seed = 10) 
+                                        trace_fn=None) 
         print('end slice sampling')
         samples = samples[0].numpy()
         print('i punti trovati sono:')
