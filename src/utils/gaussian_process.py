@@ -22,8 +22,8 @@ import warnings
 from sklearn.exceptions import ConvergenceWarning
 from pathlib import Path
 
-import tensorflow as tf
-
+import tensorflow.compat.v2 as tf
+tf.enable_v2_behavior()
 import tensorflow_probability as tfp
 
 
