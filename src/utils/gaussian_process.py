@@ -25,6 +25,8 @@ from pathlib import Path
 import tensorflow.compat.v2 as tf
 tf.enable_v2_behavior()
 import tensorflow_probability as tfp
+print(f'TnesorFlow version: {tf.__version__}')
+print(f'TnesorFlow Probability version: {tfp.__version__}')
 
 
 # Allows to change max_iter (see cell below) as well as gtol.
