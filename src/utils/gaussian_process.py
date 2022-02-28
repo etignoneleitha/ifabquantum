@@ -301,7 +301,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
 #                                         seed = 10), 
         samples = tfp.mcmc.sample_chain(
                                         num_results=500,
-                                        current_state=[1.,1.],
+                                        current_state=[1.,0.5],
                                         kernel=tfp.mcmc.HamiltonianMonteCarlo(
                                               target_log_prob_fn=self.log_marginal_likelihood,
                                               step_size=0.1,
