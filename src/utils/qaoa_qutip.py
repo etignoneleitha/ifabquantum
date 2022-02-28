@@ -238,7 +238,7 @@ class qaoa_qutip(object):
         Y = []
         for i in range(N_points):
             x = np.random.uniform(angles_bounds[0], angles_bounds[1], depth*2)
-            X.append(x)
+            X.append(x.tolist())
             state_0, mean_energy, variance, fidelity_tot = self.quantum_algorithm(x)
             Y.append(mean_energy)
 
