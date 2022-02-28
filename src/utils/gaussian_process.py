@@ -288,7 +288,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         ''' Generates array of (N_points,2) random hyperaparameters inside given bounds
         '''
         dtype = np.float32
-        init_state = np.ones(2)*0.5 # np.ones(len(self.kernel_.theta))
+        init_state = np.ones(2)*20 # np.ones(len(self.kernel_.theta))
         print('begin slice sampling')
         samples = tfp.mcmc.sample_chain(
                                         num_results=500,
@@ -311,6 +311,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         
     def mc_acq_func(self, x, *args):
         ''' Averages the value of the acq_func for different sets of hyperparameters chosen by pick_hyperparameters
+
         method '''
         hyper_params = args[-1]
         acq_func_values = []
