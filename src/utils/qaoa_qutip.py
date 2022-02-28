@@ -234,7 +234,7 @@ class qaoa_qutip(object):
                                fixed_params=None):
         np.random.seed(DEFAULT_PARAMS['seed'])
         random.seed(DEFAULT_PARAMS['seed'])
-
+        X = []
         x = np.random.uniform(angles_bounds[0], angles_bounds[1], depth*2)
         X.append(x)
         state_0, mean_energy, variance, fidelity_tot = self.quantum_algorithm(x)
