@@ -287,7 +287,6 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
     def pick_hyperparameters(self, N_points, bounds_elle, bounds_sigma):
         ''' Generates array of (N_points,2) random hyperaparameters inside given bounds
         '''
-        dtype = np.float32
         init_state = np.ones(2)*0.1 # np.ones(len(self.kernel_.theta))
         print('begin slice sampling')
         # samples = tfp.mcmc.sample_chain(
@@ -302,7 +301,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
 #                                         seed = 10), 
         samples = tfp.mcmc.sample_chain(
                                         num_results=500,
-                                        current_state=init_state,
+                                        current_state=1.,
                                         kernel=tfp.mcmc.HamiltonianMonteCarlo(
                                               target_log_prob_fn=self.log_marginal_likelihood,
                                               step_size=0.1,
