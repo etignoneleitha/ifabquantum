@@ -236,10 +236,11 @@ class qaoa_qutip(object):
         random.seed(DEFAULT_PARAMS['seed'])
         X = []
         Y = []
-        x = np.random.uniform(angles_bounds[0], angles_bounds[1], depth*2)
-        X.append(x)
-        state_0, mean_energy, variance, fidelity_tot = self.quantum_algorithm(x)
-        Y.append(mean_energy)
+        for i in range(N_points):
+            x = np.random.uniform(angles_bounds[0], angles_bounds[1], depth*2)
+            X.append(x)
+            state_0, mean_energy, variance, fidelity_tot = self.quantum_algorithm(x)
+            Y.append(mean_energy)
 
        #  hypercube_sampler = qmc.LatinHypercube(d=depth*2, seed = DEFAULT_PARAMS['seed'])
 #         X = hypercube_sampler.random(N_points)
