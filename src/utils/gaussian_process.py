@@ -300,8 +300,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                                             step_size=0.05,
                                             max_doublings=20),
                                         num_burnin_steps=0,
-                                        trace_fn=None,
-                                        seed = 10), 
+                                        trace_fn=None), 
         print('end slice sampling')
         samples = samples[0].numpy()
         self.samples = samples
