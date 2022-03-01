@@ -63,6 +63,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         self.y_best = np.inf
         self.seed = DEFAULT_PARAMS["seed"]
         self.samples = []
+        self.average_kernel_params = [DEFAULT_PARAMS['initial_length_scale'], DEFAULT_PARAMS['initial_sigma']]
 
     def get_info(self):
         '''
@@ -291,30 +292,23 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         '''
         init_state = np.ones(2)*0.1 # np.ones(len(self.kernel_.theta))
         print('begin slice sampling')
-        # samples = tfp.mcmc.sample_chain(
-#                                         num_results=500,
-#                                         current_state=init_state,
-#                                         kernel=tfp.mcmc.SliceSampler(
-#                                             self.log_marginal_likelihood,
-#                                             step_size=0.05,
-#                                             max_doublings=20),
-#                                         num_burnin_steps=0,
-#                                         trace_fn=None,
-#                                         seed = 10), 
         samples = tfp.mcmc.sample_chain(
-                                        num_results=500,
+                                        num_results=300,
                                         current_state=init_state,
-                                        kernel=tfp.mcmc.HamiltonianMonteCarlo(
-                                              target_log_prob_fn=self.log_marginal_likelihood,
-                                              step_size=0.1,
-                                              num_leapfrog_steps=10),
+                                        kernel=tfp.mcmc.SliceSampler(
+                                            self.log_marginal_likelihood,
+                                            step_size=0.05,
+                                            max_doublings=20),
                                         num_burnin_steps=0,
-                                        trace_fn=None) 
+                                        trace_fn=None,
+                                        seed = 10), 
         print('end slice sampling')
         samples = samples[0].numpy()
+        self.samples = samples
         print('i punti trovati sono:')
         print(samples)
         samples = samples[-N_points:] #taking the last N_points
+        self.average_kernel_parameters = np.mean(samples, axis = 1)
         
         return samples
         

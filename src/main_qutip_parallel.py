@@ -141,10 +141,9 @@ for i in range(nbayes):
     y_next_point = mean_energy
     qaoa_time = time.time() - start_time - bayes_time
     fidelity = fidelity_tot
-    corr_length = gp.kernel_.get_params()['k2__length_scale']
-    constant_kernel = gp.kernel_.get_params()['k1__constant_value']
     log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
     gp.fit(next_point, y_next_point)
+    constant_kernel, corr_length = np.exp(gp.average_kernel_params)
     kernel_time = time.time() - start_time - qaoa_time - bayes_time
     step_time = time.time() - start_time
     new_data = ([i + nwarmup]
