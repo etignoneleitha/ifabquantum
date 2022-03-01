@@ -254,6 +254,5 @@ class qaoa_qutip(object):
             Y.append(mean_energy)
             
         print(X, Y)
-        exit()
 
         return X, Y
