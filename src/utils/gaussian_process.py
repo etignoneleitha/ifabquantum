@@ -62,6 +62,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         self.x_best = 0
         self.y_best = np.inf
         self.seed = DEFAULT_PARAMS["seed"]
+        self.mcmc_samples = []
         self.samples = []
         self.average_kernel_params = [DEFAULT_PARAMS['initial_length_scale'], DEFAULT_PARAMS['initial_sigma']]
 
@@ -115,7 +116,14 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                 
         if self.optimizer == "fmin_l_bfgs_b":
             self.samples = []
-            self.samples.append(initial_theta)
+            tupla = []
+            tupla.append(obj_func(initial_theta)[0])
+            tupla.append(obj_func(initial_theta)[1][0])
+            tupla.append(obj_func(initial_theta)[1][1])
+            data = np.concatenate(
+                                 ([len(self.samples)], initial_theta,  tupla)
+                                 )
+            self.samples.append(data.tolist())
         
             def callbackF(Xi):
                 tupla = []
@@ -125,7 +133,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                 data = np.concatenate(
                                      ([len(self.samples)], Xi,  tupla)
                                      )
-                self.samples.append(data)
+                self.samples.append(data.tolist())
                 
             opt_res = minimize(obj_func,
                                initial_theta,
@@ -137,7 +145,6 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                                         'gtol': self.gtol}
                                            )
             _check_optimize_result("lbfgs", opt_res)
-            self.samples = np.array(self.samples)
             theta_opt, func_min = opt_res.x, opt_res.fun
 
 
@@ -292,22 +299,25 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         '''
         init_state = np.ones(2)*0.1 # np.ones(len(self.kernel_.theta))
         print('begin slice sampling')
+        NUM_CHAINS = 2
+        init_state = np.ones([NUM_CHAINS, 1], dtype=dtype)
         samples = tfp.mcmc.sample_chain(
                                         num_results=300,
                                         current_state=init_state,
                                         kernel=tfp.mcmc.SliceSampler(
                                             self.log_marginal_likelihood,
-                                            step_size=0.05,
-                                            max_doublings=20),
+                                            step_size=0.00,
+                                            max_doublings=6),
                                         num_burnin_steps=0,
                                         trace_fn=None), 
         print('end slice sampling')
         samples = samples[0].numpy()
-        self.samples = samples
+        self.mcmc_samples = samples
         print('i punti trovati sono:')
         print(samples)
         samples = samples[-N_points:] #taking the last N_points
         self.average_kernel_parameters = np.mean(samples, axis = 1)
+        self.std_kernel_parameters = np.std(samples, axis = 1)
         
         return samples
         
@@ -539,16 +549,29 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
     def get_log_marginal_likelihood_grid(self, show = True, save = False):
         num = 50
         x = np.zeros((num, num))
-        min_x = DEFAULT_PARAMS['length_scale_bounds'][0]
-        max_x = DEFAULT_PARAMS['length_scale_bounds'][1]
-        min_y = DEFAULT_PARAMS['constant_bounds'][0]
-        max_y = DEFAULT_PARAMS['constant_bounds'][1]
-        ascisse = np.linspace(np.log(min_x), np.log(max_x), num = num)
-        ordinate = np.linspace(np.log(min_y), np.log(max_y), num = num)
+        min_x = np.log(DEFAULT_PARAMS['length_scale_bounds'][0])
+        max_x = np.log(DEFAULT_PARAMS['length_scale_bounds'][1])
+        min_y = np.log(DEFAULT_PARAMS['constant_bounds'][0])
+        max_y = np.log(DEFAULT_PARAMS['constant_bounds'][1])
+        ascisse = np.linspace(min_x, max_x, num = num)
+        ordinate = np.linspace(min_y, max_y, num = num)
         for i, ascissa in enumerate(ascisse):
             for j, ordinata in enumerate(ordinate):
                 x[j, i] = self.log_marginal_likelihood([ascissa, ordinata])
         
         x = np.array(x)
+        
+        im = plt.imshow(x,  extent = [min_x, max_x, min_y, max_y], origin = 'lower', aspect = 'auto')
+        plt.xlabel('constant')
+        plt.ylabel('corr length')
+        plt.colorbar(im)
+        max = np.max(x)
+        plt.clim(max-2, max*1.05)
+        plt.title('log_marg_likelihood iter:{} kernel_{}'.format(len(self.X), self.kernel_))
+        if save:
+            plt.savefig('data/marg_likelihood_iter={}_kernel={}.png'.format(len(self.X), self.kernel_))
+        if show:
+            plt.show()
+        
         return x
         
