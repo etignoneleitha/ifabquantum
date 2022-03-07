@@ -14,6 +14,7 @@ from utils.default_params import *
 import time
 from pathlib import Path
 import os
+from sklearn.metrics.pairwise import euclidean_distances
 
 np.set_printoptions(precision=4, suppress=True)
 
@@ -102,7 +103,18 @@ print('Random generated X train:', X_train)
 print('With energies: ', y_train)
 print('\n\n\n')
 
+fig = plt.figure()
+distances = euclidean_distances(X_train)
+#ind = np.diag_indices_from(distances)
+#distances[ind] = y_train
+print(distances)
+print(X_train[2],'\n', X_train[6],'\n', X_train[7],'\n', X_train[8])
 gp.fit(X_train, y_train)
+print(gp.get_covariance_matrix())
+log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
+
+
+
 
 print('Just fitted data so now we have kernel and kernel_: ')
 print(gp.kernel)
@@ -131,20 +143,23 @@ for i_tr, x in enumerate(X_train):
 ### BAYESIAN OPTIMIZATION
 
 print('Training ...')
-
 for i in range(nbayes):
     
     start_time = time.time()
     next_point, n_it, avg_sqr_distances, std_pop_energy = gp.bayesian_opt_step(method)
+    
     fin_state, mean_energy, variance, fidelity_tot = qaoa.quantum_algorithm(next_point)
     bayes_time = time.time() - start_time
     y_next_point = mean_energy
     qaoa_time = time.time() - start_time - bayes_time
     fidelity = fidelity_tot
-    log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
+    #log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
     gp.fit(next_point, y_next_point)
     constant_kernel, corr_length = np.exp(gp.average_kernel_params)
     kernel_time = time.time() - start_time - qaoa_time - bayes_time
+    print('now kernel is:')
+    print(gp.kernel)
+    print(gp.kernel_)
     step_time = time.time() - start_time
     new_data = ([i + nwarmup]
                 + next_point

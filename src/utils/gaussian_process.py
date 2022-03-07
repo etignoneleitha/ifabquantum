@@ -307,7 +307,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                                         current_state=init_state,
                                         kernel=tfp.mcmc.SliceSampler(
                                             self.log_marginal_likelihood,
-                                            step_size=0.00,
+                                            step_size=0.05,
                                             max_doublings=6),
                                         num_burnin_steps=0,
                                         trace_fn=None), 
