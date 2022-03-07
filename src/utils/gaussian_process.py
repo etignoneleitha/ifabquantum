@@ -299,7 +299,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         '''
         init_state = np.ones(2)*0.1 # np.ones(len(self.kernel_.theta))
         print('begin slice sampling')
-        NUM_CHAINS = 1
+        NUM_CHAINS = 2
         dtype = np.float32
         init_state = np.ones([2, NUM_CHAINS], dtype=dtype)
         samples = tfp.mcmc.sample_chain(
@@ -319,6 +319,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         samples = samples[-N_points:] #taking the last N_points
         self.average_kernel_parameters = np.mean(samples, axis = 1)
         self.std_kernel_parameters = np.std(samples, axis = 1)
+        print('avg pm std samples: ', self.average_kernel_parameters, self.std_kernel_parameters)
         
         return samples
         
