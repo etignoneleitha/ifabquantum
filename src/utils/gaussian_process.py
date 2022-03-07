@@ -301,7 +301,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print('begin slice sampling')
         NUM_CHAINS = 2
         dtype = np.float32
-        init_state = np.ones([2, NUM_CHAINS], dtype=dtype)
+        init_state = np.ones([2*NUM_CHAINS,1], dtype=dtype)
         samples = tfp.mcmc.sample_chain(
                                         num_results=300,
                                         current_state=init_state,
@@ -432,7 +432,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
 
         if method == 'DIFF-EVOL':
             if DEFAULT_PARAMS['diff_evol_func'] == 'mc':
-                best_params = np.array(self.pick_hyperparameters(10, DEFAULT_PARAMS['length_scale_bounds'], DEFAULT_PARAMS['constant_bounds']))
+                best_params = np.array(self.pick_hyperparameters(50, DEFAULT_PARAMS['length_scale_bounds'], DEFAULT_PARAMS['constant_bounds']))
                 diff_evol_args = [-1, best_params]
                 fun = self.mc_acq_func
             else:
