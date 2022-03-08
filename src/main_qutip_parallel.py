@@ -78,7 +78,7 @@ print('GS degeneracy: ', degeneracy)
 print('GS: ', qaoa.gs_binary, '\n\n\n')
 
 DEFAULT_PARAMS["seed"] = seed + i_trial
-output_folder = Path(__file__).parents[1] / "output"
+output_folder = Path(__file__).parents[1] / "output cluster"
 file_name = f'lfgbs_p_{depth}_punti_{nwarmup + nbayes}_warmup_{nwarmup}_train_{nbayes}_trial_{i_trial}_graph_{name_plot}.dat'
 data = []
 ### CREATE GP AND FIT TRAINING DATA
