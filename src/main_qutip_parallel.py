@@ -140,7 +140,7 @@ for i_tr, x in enumerate(X_train):
                 fidelity_tot,
                 variance] +
                 np.exp(gp.kernel_.theta[1:]).tolist() +
-                np.zeros(2*depth-1).tolist() +
+                np.zeros(2*depth).tolist() +
                 [np.exp(gp.kernel_.theta[0]), 0, 0, 0, 0, 0, 0, 0, 0]
                 )
 
