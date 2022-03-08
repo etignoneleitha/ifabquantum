@@ -145,8 +145,6 @@ for i_tr, x in enumerate(X_train):
                 )
 
 ### BAYESIAN OPTIMIZATION
-print(data)
-exit()
 print('Training ...')
 for i in range(nbayes):
     
