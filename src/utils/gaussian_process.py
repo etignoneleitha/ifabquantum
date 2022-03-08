@@ -65,6 +65,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         self.mcmc_samples = []
         self.samples = []
         self.average_kernel_params = [DEFAULT_PARAMS['initial_length_scale'], DEFAULT_PARAMS['initial_sigma']]
+        self.std_kernel_params = [0,0]
 
     def get_info(self):
         '''
@@ -317,9 +318,9 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print('i punti trovati sono:')
         print(samples)
         samples = samples[-N_points:] #taking the last N_points
-        self.average_kernel_parameters = np.squeeze(np.mean(samples, axis = 0))
+        self.average_kernel_params = np.squeeze(np.mean(samples, axis = 0))
         self.std_kernel_params = np.squeeze(np.std(samples, axis = 0))
-        print('avg pm std samples: ', self.average_kernel_parameters, self.std_kernel_params)
+        print('avg pm std samples: ', self.average_kernel_params, self.std_kernel_params)
         
         return samples
         
