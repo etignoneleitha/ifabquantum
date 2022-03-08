@@ -192,6 +192,7 @@ for i in range(nbayes):
                 ])
     print(new_data)
     data.append(new_data)
+    print(data)
     print(i + nwarmup,'/', nbayes, mean_energy, variance, fidelity_tot, *next_point)
 
     format_list = ['%+.8f '] * len(new_data)
