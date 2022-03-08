@@ -155,6 +155,7 @@ for i in range(nbayes):
     fidelity = fidelity_tot
     log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
     gp.fit(next_point, y_next_point)
+    #constant_kernel, corr_length = np.exp(gp.average_kernel_params)
     constant_kernel, corr_length = np.exp(gp.average_kernel_params)
     kernel_time = time.time() - start_time - qaoa_time - bayes_time
     print('now kernel is:')
