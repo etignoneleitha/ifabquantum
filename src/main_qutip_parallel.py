@@ -86,7 +86,7 @@ data = []
 ### CREATE GP AND FIT TRAINING DATA
 # kernel = ConstantKernel(1)*RBF(0.2, length_scale_bounds = (1E-1, 1E2))
 kernel = ConstantKernel(1.1, constant_value_bounds = DEFAULT_PARAMS['constant_bounds']) *\
-             Matern(length_scale=0.11, length_scale_bounds=DEFAULT_PARAMS['length_scale_bounds'], nu=1.5)
+             Matern(length_scale=[0.11]*depth*2, length_scale_bounds=DEFAULT_PARAMS['length_scale_bounds'], nu=1.5)
 gp = MyGaussianProcessRegressor(kernel=kernel,
                                 optimizer= DEFAULT_PARAMS['kernel_optimizer'], #fmin_l_bfgs_bor differential_evolution
                                 #optimizer='differential_evolution', #fmin_l_bfgs_bor
@@ -113,7 +113,7 @@ print(distances)
 print(X_train[2],'\n', X_train[6],'\n', X_train[7],'\n', X_train[8])
 gp.fit(X_train, y_train)
 print(gp.get_covariance_matrix())
-log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
+#log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
 
 
 
@@ -139,8 +139,8 @@ for i_tr, x in enumerate(X_train):
                 + [y_train[i_tr],
                 fidelity_tot,
                 variance,
-                gp.kernel_.get_params()['k2__length_scale'], 0,
-                gp.kernel_.get_params()['k1__constant_value'], 0, 0, 0, 0, 0, 0, 0, 0])
+                np.exp(gp.kernel_.theta[1:]).tolist(), np.zeros(2*depth-1).tolist(), 
+                np.exp(gp.kernel_.theta[0]), 0, 0, 0, 0, 0, 0, 0, 0])
 
 ### BAYESIAN OPTIMIZATION
 
@@ -155,11 +155,15 @@ for i in range(nbayes):
     y_next_point = mean_energy
     qaoa_time = time.time() - start_time - bayes_time
     fidelity = fidelity_tot
-    log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
+    #log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
     gp.fit(next_point, y_next_point)
     #constant_kernel, corr_length = np.exp(gp.average_kernel_params)
-    constant_kernel, corr_length = np.exp(gp.average_kernel_params)
-    constant_kernel_std, corr_length_std = np.exp(gp.std_kernel_params)
+    params = np.exp(gp.average_kernel_params)
+    constant_kernel = params[0]
+    corr_lengths = params[1:]
+    avg_kernel_params_std =  np.exp(gp.std_kernel_params)
+    constant_kernel_std = avg_kernel_params_std[0]
+    corr_lengths_std = avg_kernel_params_std[1:] 
     print(constant_kernel, corr_length, constant_kernel_std, corr_length_std )
     kernel_time = time.time() - start_time - qaoa_time - bayes_time
     print('now kernel is:')
@@ -170,8 +174,8 @@ for i in range(nbayes):
                 + [y_next_point,
                 fidelity,
                 variance,
-                corr_length,
-                corr_length_std,
+                corr_lengths.tolist(),
+                corr_lengths_std,
                 constant_kernel,
                 constant_kernel_std,
                 std_pop_energy,
@@ -196,7 +200,7 @@ for i in range(nbayes):
     np.savetxt(folder +"/"+ file_name, data, fmt = fmt_string, header  ="".join(results_structure))
     #np.savetxt(folder +"/"+ "step_{}_kernel_opt.dat".format(i), gp.samples)
     np.savetxt(folder +"/"+ "step_{}_opt.dat".format(i), gp.mcmc_samples)
-    np.savetxt(folder +"/"+ "step_{}_likelihood_grid.dat".format(i), log_marginal_likelihood_grid)
+    #np.savetxt(folder +"/"+ "step_{}_likelihood_grid.dat".format(i), log_marginal_likelihood_grid)
 
 best_x, best_y, where = gp.get_best_point()
 
