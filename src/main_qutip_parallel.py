@@ -188,7 +188,8 @@ for i in range(nbayes):
     folder = os.path.join(output_folder, folder_name)
     os.makedirs(folder, exist_ok = True)
     np.savetxt(folder +"/"+ file_name, data, fmt = fmt_string, header  ="".join(results_structure))
-    np.savetxt(folder +"/"+ "step_{}_kernel_opt.dat".format(i), gp.samples)
+    #np.savetxt(folder +"/"+ "step_{}_kernel_opt.dat".format(i), gp.samples)
+    np.savetxt(folder +"/"+ "step_{}_opt.dat".format(i), gp.mcmc_samples)
     np.savetxt(folder +"/"+ "step_{}_likelihood_grid.dat".format(i), log_marginal_likelihood_grid)
 
 best_x, best_y, where = gp.get_best_point()
