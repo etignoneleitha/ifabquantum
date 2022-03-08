@@ -302,7 +302,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print('begin slice sampling')
         NUM_CHAINS = 1
         dtype = np.float32
-        init_state = np.ones([2,1], dtype=dtype)
+        init_state = np.ones([len(self.kernel_.theta),1], dtype=dtype)
         samples = tfp.mcmc.sample_chain(
                                         num_results=300,
                                         current_state=init_state,
