@@ -190,6 +190,7 @@ for i in range(nbayes):
                 kernel_time,
                 step_time
                 ])
+    print(new_data)
     data.append(new_data)
     print(i + nwarmup,'/', nbayes, mean_energy, variance, fidelity_tot, *next_point)
 
