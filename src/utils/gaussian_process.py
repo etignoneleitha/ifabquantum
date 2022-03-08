@@ -318,7 +318,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         print(samples)
         samples = samples[-N_points:] #taking the last N_points
         self.average_kernel_parameters = np.squeeze(np.mean(samples, axis = 0))
-        self.std_kernel_parameters = np.squeeze(np.std(samples, axis = 0))
+        self.std_kernel_params = np.squeeze(np.std(samples, axis = 0))
         print('avg pm std samples: ', self.average_kernel_parameters, self.std_kernel_params)
         
         return samples
