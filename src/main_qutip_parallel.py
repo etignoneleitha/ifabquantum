@@ -138,12 +138,15 @@ for i_tr, x in enumerate(X_train):
                 + x
                 + [y_train[i_tr],
                 fidelity_tot,
-                variance,
-                np.exp(gp.kernel_.theta[1:]).tolist(), np.zeros(2*depth-1).tolist(), 
-                np.exp(gp.kernel_.theta[0]), 0, 0, 0, 0, 0, 0, 0, 0])
+                variance] +
+                np.exp(gp.kernel_.theta[1:]).tolist() +
+                np.zeros(2*depth-1).tolist() +
+                [np.exp(gp.kernel_.theta[0]), 0, 0, 0, 0, 0, 0, 0, 0]
+                )
 
 ### BAYESIAN OPTIMIZATION
-
+print(data)
+exit()
 print('Training ...')
 for i in range(nbayes):
     
@@ -176,10 +179,10 @@ for i in range(nbayes):
                 + next_point
                 + [y_next_point,
                 fidelity,
-                variance,
-                corr_lengths.tolist(),
-                corr_lengths_std.tolist(),
-                constant_kernel,
+                variance] +
+                corr_lengths.tolist() +
+                corr_lengths_std.tolist() +
+                [constant_kernel,
                 constant_kernel_std,
                 std_pop_energy,
                 avg_sqr_distances,
