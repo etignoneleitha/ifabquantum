@@ -169,13 +169,16 @@ for i in range(nbayes):
     print('now kernel is:')
     print(gp.kernel_)
     step_time = time.time() - start_time
+    print('dati salvati')
+    print(corr_lengths.tolist(), corr_lengths_std.tolist())
+    
     new_data = ([i + nwarmup]
                 + next_point
                 + [y_next_point,
                 fidelity,
                 variance,
                 corr_lengths.tolist(),
-                corr_lengths_std,
+                corr_lengths_std.tolist(),
                 constant_kernel,
                 constant_kernel_std,
                 std_pop_energy,
