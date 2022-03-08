@@ -157,6 +157,8 @@ for i in range(nbayes):
     gp.fit(next_point, y_next_point)
     #constant_kernel, corr_length = np.exp(gp.average_kernel_params)
     constant_kernel, corr_length = np.exp(gp.average_kernel_params)
+    constant_kernel_std, corr_length_std = np.exp(gp.std_kernel_params)
+    print(constant_kernel, corr_length, constant_kernel_std, corr_length_std )
     kernel_time = time.time() - start_time - qaoa_time - bayes_time
     print('now kernel is:')
     print(gp.kernel_)
