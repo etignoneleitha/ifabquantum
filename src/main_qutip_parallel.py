@@ -44,17 +44,17 @@ results_structure = ['iter ',
                      'energy   ',
                      'fidelity  ',
                      'variance  ',
-                     'corr_length ',
-                     'corr_length_std ',
-                     'const_kernel ',
-                     'const_kernel_std ',
-                     'std_energies ',
-                     'average_distances ',
-                     'nit ',
-                     'time_opt_bayes ',
-                     'time_qaoa ',
-                     'time_opt_kernel ',
-                     'time_step '
+                     'corr_length  ',
+                     'corr_length_std  ',
+                     'const_kernel  ',
+                     'const_kernel_std  ',
+                     'std_energies  ',
+                     'average_distances  ',
+                     'nit  ',
+                     'time_opt_bayes  ',
+                     'time_qaoa  ',
+                     'time_opt_kernel  ',
+                     'time_step  '
                      ]
 
 ### CREATE GRAPH
@@ -139,8 +139,8 @@ for i_tr, x in enumerate(X_train):
                 + [y_train[i_tr],
                 fidelity_tot,
                 variance,
-                gp.kernel_.get_params()['k2__length_scale'],
-                gp.kernel_.get_params()['k1__constant_value'], 0, 0, 0, 0, 0, 0, 0])
+                gp.kernel_.get_params()['k2__length_scale'], 0,
+                gp.kernel_.get_params()['k1__constant_value'], 0, 0, 0, 0, 0, 0, 0, 0])
 
 ### BAYESIAN OPTIMIZATION
 
