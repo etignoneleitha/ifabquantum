@@ -313,7 +313,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                                         trace_fn=None), 
         print('end slice sampling')
         samples = samples[0].numpy()
-        self.mcmc_samples = samples
+        self.mcmc_samples = np.squeeze(samples)
         print('i punti trovati sono:')
         print(samples)
         samples = samples[-N_points:] #taking the last N_points
