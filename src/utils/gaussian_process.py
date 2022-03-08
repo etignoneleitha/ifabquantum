@@ -433,7 +433,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
 
         if method == 'DIFF-EVOL':
             if DEFAULT_PARAMS['diff_evol_func'] == 'mc':
-                best_params = np.array(self.pick_hyperparameters(50, DEFAULT_PARAMS['length_scale_bounds'], DEFAULT_PARAMS['constant_bounds']))
+                best_params = np.array(self.pick_hyperparameters(2, DEFAULT_PARAMS['length_scale_bounds'], DEFAULT_PARAMS['constant_bounds']))
                 diff_evol_args = [-1, best_params]
                 fun = self.mc_acq_func
             else:
