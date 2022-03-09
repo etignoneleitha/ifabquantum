@@ -232,6 +232,7 @@ class qaoa_qutip(object):
                                depth,
                                angles_bounds,
                                fixed_params=None):
+                               
         np.random.seed(DEFAULT_PARAMS['seed'])
         random.seed(DEFAULT_PARAMS['seed'])
         X = []
