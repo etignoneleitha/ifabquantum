@@ -104,6 +104,8 @@ X_train, y_train = qaoa.generate_random_points(nwarmup, depth, param_range)
 print('Random generated X train:', X_train)
 print('With energies: ', y_train)
 print('\n\n\n')
+exit()
+
 
 fig = plt.figure()
 distances = euclidean_distances(X_train)
@@ -114,7 +116,6 @@ print(X_train[2],'\n', X_train[6],'\n', X_train[7],'\n', X_train[8])
 gp.fit(X_train, y_train)
 print(gp.get_covariance_matrix())
 #log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
-
 
 
 
