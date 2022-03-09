@@ -33,7 +33,7 @@ print(f'TnesorFlow Probability version: {tfp.__version__}')
 # It can be straightforwardly extended to other parameters
 class MyGaussianProcessRegressor(GaussianProcessRegressor):
     
-    def __init__(self, angles_bounds, gtol, max_iter, *args, **kwargs):
+    def __init__(self, angles_bounds, gtol, max_iter, diff_evol_func, *args, **kwargs):
         '''Initializes gaussian process class
 
         The class also inherits from Sklearn GaussianProcessRegressor
@@ -66,6 +66,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         self.samples = []
         self.average_kernel_params = [DEFAULT_PARAMS['initial_length_scale'], DEFAULT_PARAMS['initial_sigma']]
         self.std_kernel_params = [0,0]
+        self.diff_evol_func = diff_evol_func
 
     def get_info(self):
         '''
@@ -432,13 +433,13 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
             next_point = results.x
 
         if method == 'DIFF-EVOL':
-            if DEFAULT_PARAMS['diff_evol_func'] == 'mc':
+            if self.diff_evol_func == 'mc':
                 best_params = np.array(self.pick_hyperparameters(2, DEFAULT_PARAMS['length_scale_bounds'], DEFAULT_PARAMS['constant_bounds']))
                 diff_evol_args = [-1, best_params]
                 fun = self.mc_acq_func
             else:
                 fun = self.acq_func
-                diff_evol_args =  [-1]
+                diff_evol_args = [-1]
             with DifferentialEvolutionSolver(fun,
                                             bounds = [(0,1), (0,1)]*depth,
                                             callback = None,

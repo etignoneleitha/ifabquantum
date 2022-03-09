@@ -31,6 +31,13 @@ i_trial = args.i_trial
 num_nodes = args.num_nodes
 nwarmup = args.nwarmup
 average_connectivity = args.average_connectivity
+diff_evol_func = args.diff_evol_func
+
+
+if diff_evol_func == None:
+    kernel_optimizer = 'fmin_l_bfgs_b'
+else:
+    kernel_optimizer = None
 
 ### PARAMETERS
 nbayes = args.nbayes
@@ -44,10 +51,8 @@ results_structure = ['iter ',
                      'energy   ',
                      'fidelity  ',
                      'variance  ',
-                     'corr_length  ', ' '*(2*depth -1), 
-                     'corr_length_std  ', ' '*(2*depth -1),
+                     'corr_length  ',
                      'const_kernel  ',
-                     'const_kernel_std  ',
                      'std_energies  ',
                      'average_distances  ',
                      'nit  ',
@@ -88,12 +93,13 @@ data = []
 kernel = ConstantKernel(1.1, constant_value_bounds = DEFAULT_PARAMS['constant_bounds']) *\
              Matern(length_scale=[0.11]*depth*2, length_scale_bounds=DEFAULT_PARAMS['length_scale_bounds'], nu=1.5)
 gp = MyGaussianProcessRegressor(kernel=kernel,
-                                optimizer= DEFAULT_PARAMS['kernel_optimizer'], #fmin_l_bfgs_bor differential_evolution
+                                optimizer= kernel_optimizer, #fmin_l_bfgs_bor differential_evolution
                                 #optimizer='differential_evolution', #fmin_l_bfgs_bor
                                 angles_bounds=param_range,
                                 n_restarts_optimizer=0,
                                 gtol=1e-6,
-                                max_iter=1e4
+                                max_iter=1e4,
+                                diff_evol_func = diff_evol_func
                                 )
 
 print('Created gaussian process istance with starting kernel')
@@ -104,7 +110,6 @@ X_train, y_train = qaoa.generate_random_points(nwarmup, depth, param_range)
 print('Random generated X train:', X_train)
 print('With energies: ', y_train)
 print('\n\n\n')
-exit()
 
 
 fig = plt.figure()
@@ -139,12 +144,12 @@ for i_tr, x in enumerate(X_train):
                 + x
                 + [y_train[i_tr],
                 fidelity_tot,
-                variance] +
+                variance]+
                 np.exp(gp.kernel_.theta[1:]).tolist() +
-                np.zeros(2*depth).tolist() +
-                [np.exp(gp.kernel_.theta[0]), 0, 0, 0, 0, 0, 0, 0, 0]
+                [np.exp(gp.kernel_.theta[0]),
+                0, 0, 0, 0, 0, 0, 0]
                 )
-
+print(len(data[0]))
 ### BAYESIAN OPTIMIZATION
 print('Training ...')
 for i in range(nbayes):
@@ -160,29 +165,25 @@ for i in range(nbayes):
     #log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
     gp.fit(next_point, y_next_point)
     #constant_kernel, corr_length = np.exp(gp.average_kernel_params)
-    params = np.exp(gp.average_kernel_params)
+    if diff_evol_func == None:
+        params = np.exp(gp.kernel_.theta)
+    else:
+        params = np.exp(gp.average_kernel_params)
     constant_kernel = params[0]
-    corr_lengths = params[1:]
-    avg_kernel_params_std =  np.exp(gp.std_kernel_params)
-    constant_kernel_std = avg_kernel_params_std[0]
-    corr_lengths_std = avg_kernel_params_std[1:] 
-    print(params, avg_kernel_params_std )
+    corr_length = params[1:]
+    print(params)
     kernel_time = time.time() - start_time - qaoa_time - bayes_time
     print('now kernel is:')
     print(gp.kernel_)
     step_time = time.time() - start_time
-    print('dati salvati')
-    print(corr_lengths.tolist(), corr_lengths_std.tolist())
     
     new_data = ([i + nwarmup]
                 + next_point
                 + [y_next_point,
                 fidelity,
                 variance] +
-                corr_lengths.tolist() +
-                corr_lengths_std.tolist() +
+                corr_length.tolist()+
                 [constant_kernel,
-                constant_kernel_std,
                 std_pop_energy,
                 avg_sqr_distances,
                 n_it,
@@ -191,12 +192,8 @@ for i in range(nbayes):
                 kernel_time,
                 step_time
                 ])
-    print(new_data)
+
     data.append(new_data)
-    print(data)
-    print(type(data))
-    print(len(data))
-    print(len(data[0]))
     print(i + nwarmup,'/', nbayes, mean_energy, variance, fidelity_tot, *next_point)
 
     format_list = ['%+.8f '] * len(new_data)
@@ -207,13 +204,15 @@ for i in range(nbayes):
     folder_name = file_name.split('.')[0]
     folder = os.path.join(output_folder, folder_name)
     os.makedirs(folder, exist_ok = True)
+    
     np.savetxt(folder +"/"+ file_name, data, fmt = fmt_string, header  ="".join(results_structure))
     #np.savetxt(folder +"/"+ "step_{}_kernel_opt.dat".format(i), gp.samples)
     np.savetxt(folder +"/"+ "step_{}_opt.dat".format(i), gp.mcmc_samples)
     #np.savetxt(folder +"/"+ "step_{}_likelihood_grid.dat".format(i), log_marginal_likelihood_grid)
 
 best_x, best_y, where = gp.get_best_point()
-
+print('ther where:', where, best_x, best_y)
+exit()
 data.append(data[where])
 
 np.savetxt(folder +"/"+ file_name,
