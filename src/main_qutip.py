@@ -83,7 +83,6 @@ print('GS energy: ',gs_energy)
 print('GS degeneracy: ', degeneracy)
 print('GS: ', qaoa.gs_binary, '\n\n\n')
 
-DEFAULT_PARAMS["seed"] = seed + i_trial
 output_folder = Path(__file__).parents[1] / "output_cluster"
 file_name = f'lfgbs_p_{depth}_punti_{nwarmup + nbayes}_warmup_{nwarmup}_train_{nbayes}_trial_{i_trial}_graph_{name_plot}.dat'
 data = []
@@ -105,7 +104,7 @@ print('Created gaussian process istance with starting kernel')
 print(gp.kernel)
 X_train, y_train = qaoa.generate_random_points(nwarmup, depth, param_range)
 
-
+exit()
 print('Random generated X train:', X_train)
 print('With energies: ', y_train)
 print('\n\n\n')
@@ -164,7 +163,6 @@ for i in range(nbayes):
     gp.fit(next_point, y_next_point)
     if diff_evol_func == None:
         params = np.exp(gp.kernel_.theta)
-        
     else:
         params = np.exp(gp.average_kernel_params)
     constant_kernel = params[0]
@@ -201,8 +199,11 @@ for i in range(nbayes):
     folder = os.path.join(output_folder, folder_name)
     os.makedirs(folder, exist_ok = True)
     np.savetxt(folder +"/"+ file_name, data, fmt = fmt_string, header  ="".join(results_structure))
-    np.savetxt(folder +"/"+ "step_{}_kernel_opt.dat".format(i), gp.samples)
-    np.savetxt(folder +"/"+ "step_{}_opt.dat".format(i), gp.mcmc_samples)
+    
+    if diff_evol_func == None:
+        np.savetxt(folder +"/"+ "step_{}_kernel_opt.dat".format(i), gp.samples)
+    else:
+        np.savetxt(folder +"/"+ "step_{}_opt.dat".format(i), gp.mcmc_samples)
     np.savetxt(folder +"/"+ "step_{}_likelihood_grid.dat".format(i), log_marginal_likelihood_grid)
 
 best_x, best_y, where = gp.get_best_point()
