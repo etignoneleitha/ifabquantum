@@ -527,7 +527,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         if show:
             plt.show()
     
-    def plot_log_marginal_likelihood(self, show = True, save = False):
+    def plot_log_marginal_likelihood(self, show = False, save = False):
         fig = plt.figure()
         num = 50
         x = np.zeros((num, num))
@@ -550,7 +550,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         if show:
             plt.show()
 
-    def get_log_marginal_likelihood_grid(self, show = True, save = False):
+    def get_log_marginal_likelihood_grid(self, show = False, save = False):
         num = 50
         x = np.zeros((num, num))
         min_x = np.log(DEFAULT_PARAMS['length_scale_bounds'][0])
