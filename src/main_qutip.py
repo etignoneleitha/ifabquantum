@@ -110,7 +110,6 @@ print('Random generated X train:', X_train)
 print('With energies: ', y_train)
 print('\n\n\n')
 
-exit()
 fig = plt.figure()
 distances = euclidean_distances(X_train)
 #ind = np.diag_indices_from(distances)
