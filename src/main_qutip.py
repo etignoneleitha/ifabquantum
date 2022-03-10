@@ -83,7 +83,6 @@ print('GS energy: ',gs_energy)
 print('GS degeneracy: ', degeneracy)
 print('GS: ', qaoa.gs_binary, '\n\n\n')
 
-DEFAULT_PARAMS["seed"] = seed + i_trial
 output_folder = Path(__file__).parents[1] / "output_cluster"
 file_name = f'lfgbs_p_{depth}_punti_{nwarmup + nbayes}_warmup_{nwarmup}_train_{nbayes}_trial_{i_trial}_graph_{name_plot}.dat'
 data = []
@@ -105,7 +104,6 @@ print('Created gaussian process istance with starting kernel')
 print(gp.kernel)
 X_train, y_train = qaoa.generate_random_points(nwarmup, depth, param_range)
 
-exit()
 print('Random generated X train:', X_train)
 print('With energies: ', y_train)
 print('\n\n\n')
