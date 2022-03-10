@@ -104,7 +104,6 @@ print('Created gaussian process istance with starting kernel')
 print(gp.kernel)
 X_train, y_train = qaoa.generate_random_points(nwarmup, depth, param_range)
 
-exit()
 print('Random generated X train:', X_train)
 print('With energies: ', y_train)
 print('\n\n\n')
