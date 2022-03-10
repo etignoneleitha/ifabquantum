@@ -160,9 +160,8 @@ for i in range(nbayes):
     y_next_point = mean_energy
     qaoa_time = time.time() - start_time - bayes_time
     fidelity = fidelity_tot
-    #log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
+    log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
     gp.fit(next_point, y_next_point)
-    #constant_kernel, corr_length = np.exp(gp.average_kernel_params)
     if diff_evol_func == None:
         params = np.exp(gp.kernel_.theta)
         
@@ -202,9 +201,9 @@ for i in range(nbayes):
     folder = os.path.join(output_folder, folder_name)
     os.makedirs(folder, exist_ok = True)
     np.savetxt(folder +"/"+ file_name, data, fmt = fmt_string, header  ="".join(results_structure))
-    #np.savetxt(folder +"/"+ "step_{}_kernel_opt.dat".format(i), gp.samples)
+    np.savetxt(folder +"/"+ "step_{}_kernel_opt.dat".format(i), gp.samples)
     np.savetxt(folder +"/"+ "step_{}_opt.dat".format(i), gp.mcmc_samples)
-    #np.savetxt(folder +"/"+ "step_{}_likelihood_grid.dat".format(i), log_marginal_likelihood_grid)
+    np.savetxt(folder +"/"+ "step_{}_likelihood_grid.dat".format(i), log_marginal_likelihood_grid)
 
 best_x, best_y, where = gp.get_best_point()
 
