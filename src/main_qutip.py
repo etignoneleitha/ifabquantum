@@ -61,19 +61,13 @@ results_structure = ['iter ',
                      'time_step  '
                      ]
 
-### CREATE GRAPH
-# pos = np.array([[0, 1], [0, 2], [1, 2], [0, 3], [0, 4]])
-# pos = np.array([[0, 1], [1, 2], [3, 2], [0, 3], [0, 4], [0,5]])
 np.random.seed(seed)
 num_graph = seed
 
-# name_plot = str(seed)
-# G = create_random_regular_graph(8, seed=seed, name_plot=name_plot) #create_chair_graph()
-# name_plot = "chair"
-# G = create_chair_graph(name_plot="chair")
 
 name_plot = str(seed)
 G = create_random_regular_graph(num_nodes, degree=3, seed=1)
+
 
 qaoa = qaoa_qutip(G, problem="MIS")
 gs_energy, gs_state, degeneracy = qaoa.gs_en, qaoa.gs_states, qaoa.deg
@@ -84,7 +78,7 @@ print('GS degeneracy: ', degeneracy)
 print('GS: ', qaoa.gs_binary, '\n\n\n')
 
 DEFAULT_PARAMS["seed"] = seed + i_trial
-output_folder = Path(__file__).parents[1] / "output_cluster"
+output_folder = Path(__file__).parents[1] / "output"
 file_name = f'lfgbs_p_{depth}_punti_{nwarmup + nbayes}_warmup_{nwarmup}_train_{nbayes}_trial_{i_trial}_graph_{name_plot}.dat'
 data = []
 ### CREATE GP AND FIT TRAINING DATA
@@ -131,7 +125,6 @@ print('or')
 print(gp.get_covariance_matrix_cholesky())
 print('\ncompared to')
 print(gp.get_covariance_matrix())
-print('REPRODUCING ERROR\n')
 
 
 data = []

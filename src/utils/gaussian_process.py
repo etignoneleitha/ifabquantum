@@ -25,8 +25,6 @@ from pathlib import Path
 import tensorflow.compat.v2 as tf
 tf.enable_v2_behavior()
 import tensorflow_probability as tfp
-print(f'TnesorFlow version: {tf.__version__}')
-print(f'TnesorFlow Probability version: {tfp.__version__}')
 
 
 # Allows to change max_iter (see cell below) as well as gtol.
@@ -52,7 +50,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                          n_restarts_optimizer (how many times the kernel opt is performed)
                          normalize_y: standard is yes
         '''
-        alpha = 10e-8
+        alpha = 10e-10
         super().__init__(alpha = alpha, *args, **kwargs)
         self.max_iter = max_iter
         self.gtol = gtol
