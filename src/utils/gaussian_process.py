@@ -22,16 +22,18 @@ import warnings
 from sklearn.exceptions import ConvergenceWarning
 from pathlib import Path
 
-import tensorflow as tf
-
+import tensorflow.compat.v2 as tf
+tf.enable_v2_behavior()
 import tensorflow_probability as tfp
+print(f'TnesorFlow version: {tf.__version__}')
+print(f'TnesorFlow Probability version: {tfp.__version__}')
 
 
 # Allows to change max_iter (see cell below) as well as gtol.
 # It can be straightforwardly extended to other parameters
 class MyGaussianProcessRegressor(GaussianProcessRegressor):
     
-    def __init__(self, angles_bounds, gtol, max_iter, *args, **kwargs):
+    def __init__(self, angles_bounds, gtol, max_iter, diff_evol_func, *args, **kwargs):
         '''Initializes gaussian process class
 
         The class also inherits from Sklearn GaussianProcessRegressor
@@ -60,7 +62,11 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         self.x_best = 0
         self.y_best = np.inf
         self.seed = DEFAULT_PARAMS["seed"]
+        self.mcmc_samples = []
         self.samples = []
+        self.average_kernel_params = [DEFAULT_PARAMS['initial_length_scale'], DEFAULT_PARAMS['initial_sigma']]
+        self.std_kernel_params = [0,0]
+        self.diff_evol_func = diff_evol_func
 
     def get_info(self):
         '''
@@ -112,6 +118,14 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                 
         if self.optimizer == "fmin_l_bfgs_b":
             self.samples = []
+            tupla = []
+            tupla.append(obj_func(initial_theta)[0])
+            tupla.append(obj_func(initial_theta)[1][0])
+            tupla.append(obj_func(initial_theta)[1][1])
+            data = np.concatenate(
+                                 ([len(self.samples)], initial_theta,  tupla)
+                                 )
+            self.samples.append(data.tolist())
         
             def callbackF(Xi):
                 tupla = []
@@ -121,7 +135,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                 data = np.concatenate(
                                      ([len(self.samples)], Xi,  tupla)
                                      )
-                self.samples.append(data)
+                self.samples.append(data.tolist())
                 
             opt_res = minimize(obj_func,
                                initial_theta,
@@ -133,7 +147,6 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                                         'gtol': self.gtol}
                                            )
             _check_optimize_result("lbfgs", opt_res)
-            self.samples = np.array(self.samples)
             theta_opt, func_min = opt_res.x, opt_res.fun
 
 
@@ -160,7 +173,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                                                  bounds=bounds)
         elif self.optimizer is None:
             theta_opt = initial_theta
-            func_min = 0
+            func_min = obj
         else:
             raise ValueError("Unknown optimizer %s." % self.optimizer)
         print('L ottimiz ritorna il valore migliore ', theta_opt)
@@ -264,14 +277,15 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         *args: the sign of the acquisition function (in case you have to minimize -acq fun)
 
         '''
-        self = args[0]
         try:
-            sign = args[1]
+            sign = args[0]
         except:
             sign = 1.0
         if isinstance(x[0], float):
             x = np.reshape(x, (1, -1))
+        
         f_x, sigma_x = self.predict(x, return_std=True)
+        
 
         f_prime = self.y_best #current best value
 
@@ -285,72 +299,43 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
     def pick_hyperparameters(self, N_points, bounds_elle, bounds_sigma):
         ''' Generates array of (N_points,2) random hyperaparameters inside given bounds
         '''
-        '''
-        elle = np.random.uniform(low = bounds_elle[0], high=bounds_elle[1], size=(N_points,))
-        sigma = np.random.uniform(low = bounds_sigma[0], high=bounds_sigma[1], size=(N_points,))
-        hyper_params = list(zip(elle,sigma))
-
-        lml = np.array([self.log_marginal_likelihood(np.log(hyper_param)) for hyper_param in hyper_params])
-        idx_max_values = np.argpartition(lml, -50)[-50:] #takes the 50 indexes with largest value of lml
-        best_params = hyper_params[idx_max_values]
-        '''
-
-        '''
-            ZEUS
-        nsteps, nwalkers, ndim = 100, 10, len(self.kernel_.theta)
-        start = np.random.uniform(0.1,1,(nwalkers,ndim))
-
-        sampler = zeus.EnsembleSampler(nwalkers, ndim, self.log_marginal_likelihood)
-        print("start sampli")
-        sampler.run_mcmc(start, nsteps)
-        print("end sampli")
-        hyper_params = sampler.get_chain(flat=True)[:N_points]
-        print("hhhh")
-        print(hyper_params)
-#         try:
-#             positive_hyper_params = hyper_params[hyper_params[:,0] > 0][:N_points]
-#         except:
-#              positive_hyper_params = hyper_params[hyper_params[:,0] > 0]
-#              print('Only {} hyper_params where selected'.format(len(positive_hyper_params)))
-        return hyper_params
-        '''
-        dtype = np.float32
+        init_state = np.ones(2)*0.1 # np.ones(len(self.kernel_.theta))
         print('begin slice sampling')
+        NUM_CHAINS = 1
+        dtype = np.float32
+        init_state = np.ones([len(self.kernel_.theta),1], dtype=dtype)
         samples = tfp.mcmc.sample_chain(
-                                        num_results=100,
-                                        current_state=np.ones(len(self.kernel_.theta)),
+                                        num_results=300,
+                                        current_state=init_state,
                                         kernel=tfp.mcmc.SliceSampler(
                                             self.log_marginal_likelihood,
-                                            step_size=1.0,
-                                            max_doublings=5),
-                                        num_burnin_steps=50,
+                                            step_size=0.05,
+                                            max_doublings=6),
+                                        num_burnin_steps=0,
                                         trace_fn=None), 
-        # tfd = tfp.distributions
-# 
-#         kernel = tfp.mcmc.SliceSampler(tfd.Distribution(self.log_marginal_likelihood), step_size=1.0,  max_doublings=5)
-#         state = tf.constant([1,1], dtype = dtype)
-#         extra = kernel.bootstrap_results(state)
-#         samples = []
-#         for _ in range(10):
-#           state, extra = kernel.one_step(state, extra)
-#           samples.append(state)
         print('end slice sampling')
         samples = samples[0].numpy()
+        self.mcmc_samples = np.squeeze(samples)
+        print('i punti trovati sono:')
+        print(samples)
         samples = samples[-N_points:] #taking the last N_points
+        self.average_kernel_params = np.squeeze(np.mean(samples, axis = 0))
+        self.std_kernel_params = np.squeeze(np.std(samples, axis = 0))
+        print('avg pm std samples: ', self.average_kernel_params, self.std_kernel_params)
         
         return samples
         
-
     def mc_acq_func(self, x, *args):
         ''' Averages the value of the acq_func for different sets of hyperparameters chosen by pick_hyperparameters
+
         method '''
         hyper_params = args[-1]
         acq_func_values = []
         for params in hyper_params:
-            self.kernel.set_params(**{'k1__constant_value': params[0]})
-            self.kernel.set_params(**{'k2__length_scale': params[1]})
+            self.kernel.theta = params
+            super().fit(self.X, self.Y)
             acq_func_values.append(self.acq_func(x, *args))
-
+        
         return np.mean(acq_func_values)
 
     def bayesian_opt_step(self, method = 'DIFF-EVOL', init_pos = None):
@@ -448,13 +433,13 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
             next_point = results.x
 
         if method == 'DIFF-EVOL':
-            if DEFAULT_PARAMS['diff_evol_func'] == 'mc':
-                best_params = np.array(self.pick_hyperparameters(50, DEFAULT_PARAMS['length_scale_bounds'], DEFAULT_PARAMS['constant_bounds']))
-                diff_evol_args = (self, -1, best_params)
+            if self.diff_evol_func == 'mc':
+                best_params = np.array(self.pick_hyperparameters(2, DEFAULT_PARAMS['length_scale_bounds'], DEFAULT_PARAMS['constant_bounds']))
+                diff_evol_args = [-1, best_params]
                 fun = self.mc_acq_func
             else:
                 fun = self.acq_func
-                diff_evol_args = (self, -1)
+                diff_evol_args = [-1]
             with DifferentialEvolutionSolver(fun,
                                             bounds = [(0,1), (0,1)]*depth,
                                             callback = None,
@@ -469,17 +454,23 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         next_point = self.scale_up(next_point)
         return next_point, results.nit, average_norm_distance_vectors, std_population_energy
 
-    def covariance_matrix(self):
+    def get_covariance_matrix(self):
         K = self.kernel_(self.X)
         K[np.diag_indices_from(K)] += self.alpha
         eigenvalues, eigenvectors = np.linalg.eig(K)
-        print(K)
-        print(eigenvalues)
         
         return K, eigenvalues
-
+        
+    def get_covariance_matrix_cholesky(self):
+        K = self.L_ @ np.transpose(self.L_)       
+        K[np.diag_indices_from(K)] += self.alpha
+        eigenvalues, eigenvectors = np.linalg.eig(K)
+        
+        return K, eigenvalues, np.linalg.inv(K)
+        
+        
     def plot_covariance_matrix(self, show = True, save = False):
-        K = self.covariance_matrix()
+        K = self.get_covariance_matrix()
         fig = plt.figure()
         im = plt.imshow(K, origin = 'upper')
         plt.colorbar(im)
@@ -536,7 +527,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         if show:
             plt.show()
     
-    def plot_log_marginal_likelihood(self, show = True, save = False):
+    def plot_log_marginal_likelihood(self, show = False, save = False):
         fig = plt.figure()
         num = 50
         x = np.zeros((num, num))
@@ -559,19 +550,32 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         if show:
             plt.show()
 
-    def get_log_marginal_likelihood_grid(self, show = True, save = False):
+    def get_log_marginal_likelihood_grid(self, show = False, save = False):
         num = 50
         x = np.zeros((num, num))
-        min_x = DEFAULT_PARAMS['length_scale_bounds'][0]
-        max_x = DEFAULT_PARAMS['length_scale_bounds'][1]
-        min_y = DEFAULT_PARAMS['constant_bounds'][0]
-        max_y = DEFAULT_PARAMS['constant_bounds'][1]
-        ascisse = np.linspace(np.log(min_x), np.log(max_x), num = num)
-        ordinate = np.linspace(np.log(min_y), np.log(max_y), num = num)
+        min_x = np.log(DEFAULT_PARAMS['length_scale_bounds'][0])
+        max_x = np.log(DEFAULT_PARAMS['length_scale_bounds'][1])
+        min_y = np.log(DEFAULT_PARAMS['constant_bounds'][0])
+        max_y = np.log(DEFAULT_PARAMS['constant_bounds'][1])
+        ascisse = np.linspace(min_x, max_x, num = num)
+        ordinate = np.linspace(min_y, max_y, num = num)
         for i, ascissa in enumerate(ascisse):
             for j, ordinata in enumerate(ordinate):
                 x[j, i] = self.log_marginal_likelihood([ascissa, ordinata])
         
         x = np.array(x)
+        
+        im = plt.imshow(x,  extent = [min_x, max_x, min_y, max_y], origin = 'lower', aspect = 'auto')
+        plt.xlabel('constant')
+        plt.ylabel('corr length')
+        plt.colorbar(im)
+        max = np.max(x)
+        plt.clim(max-2, max*1.05)
+        plt.title('log_marg_likelihood iter:{} kernel_{}'.format(len(self.X), self.kernel_))
+        if save:
+            plt.savefig('data/marg_likelihood_iter={}_kernel={}.png'.format(len(self.X), self.kernel_))
+        if show:
+            plt.show()
+        
         return x
         

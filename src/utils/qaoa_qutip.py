@@ -232,17 +232,14 @@ class qaoa_qutip(object):
                                depth,
                                angles_bounds,
                                fixed_params=None):
-#         print(extrem_params)
+                               
         np.random.seed(DEFAULT_PARAMS['seed'])
         random.seed(DEFAULT_PARAMS['seed'])
-
-#         for i in range(N_points):
-#             if fixed_params is None:
-#                 x = [random.uniform(extrem_params[0], extrem_params[1]) for _ in range(depth)]
-#                 x = [random.uniform(extrem_params[0], extrem_params[1]) for _ in range(depth)]
-#             else:
-#                 x = fixed_params + [random.uniform(extrem_params[0], extrem_params[1]) for _ in range(2)]
-#             X.append(x)
+        X = []
+        Y = []
+        # for i in range(N_points):
+#             x = np.random.uniform(angles_bounds[0], angles_bounds[1], depth*2)
+#             X.append(x.tolist())
 #             state_0, mean_energy, variance, fidelity_tot = self.quantum_algorithm(x)
 #             Y.append(mean_energy)
 
@@ -250,16 +247,13 @@ class qaoa_qutip(object):
         X = hypercube_sampler.random(N_points)
         l_bounds = np.repeat(angles_bounds[:,0], depth)
         u_bounds = np.repeat(angles_bounds[:,1], depth)
-        X = qmc.scale(X, l_bounds, u_bounds).astype(int)
+        X = qmc.scale(X, l_bounds, u_bounds)
         X = X.tolist()
         Y = []
         for x in X:
             state_0, mean_energy, variance, fidelity_tot = self.quantum_algorithm(x)
             Y.append(mean_energy)
-
-#            y, var_y, fid_sampled, fid_exact, sol_ratio, _ , _ = self.apply_qaoa(x)
-#            Y.append(y)
-#            data_train.append([var_y, fid_sampled, fid_exact, sol_ratio])
-
+            
+        print(X, Y)
 
         return X, Y

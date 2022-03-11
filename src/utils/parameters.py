@@ -6,7 +6,7 @@ def parse_command_line():
 
     parser.add_argument('--seed',
                         type=int,
-                        default=12,
+                        default=14,
                         help="Seed for the random number generators"
                         )
 
@@ -64,5 +64,11 @@ def parse_command_line():
                         default="./",
                         help="Directory for saving data"
                         )
+    parser.add_argument('--diff_evol_func',
+                        type=str,
+                        default=None,
+                        help="Deciding if having to go with mcmc or not"
+                        )
+
 
     return parser.parse_args()
