@@ -129,7 +129,6 @@ class qaoa_qutip(object):
         return gibbs
 
 
-
     def s2z(self, configuration):
         return [1 - 2 * s for s in configuration]
 
@@ -160,7 +159,6 @@ class qaoa_qutip(object):
             ## Hamiltonian_cost is minimized by qaoa so we need to consider -H_0
             # in order to have a solution labeled by a string of 1s
             H_c = -sum(H_0) + penalty * sum(H_int)
-            print(H_c.diag())
             energies, eigenstates = H_c.eigenstates(sort = 'low')
 
             degeneracy = next((i for i, x in enumerate(np.diff(energies)) if x), 1) + 1
@@ -258,3 +256,18 @@ class qaoa_qutip(object):
         print(X, Y)
 
         return X, Y
+        
+    def get_landscape(self, angle_bounds):
+    
+        fig = plt.figure()
+        num = 20
+        x = np.zeros((num, num))
+        gammas = np.linspace(angle_bounds[0, 0],angle_bounds[0,1], num)
+        betas = np.linspace(angle_bounds[1, 0],angle_bounds[1,1], num)
+        for i, gamma in enumerate(gammas):
+            for j, beta in enumerate(betas):
+                a, en, b, c = self.quantum_algorithm([gamma, beta])
+                x[j, i] = en
+        
+        return x
+        
