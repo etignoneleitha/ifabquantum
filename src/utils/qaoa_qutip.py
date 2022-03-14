@@ -160,6 +160,7 @@ class qaoa_qutip(object):
             ## Hamiltonian_cost is minimized by qaoa so we need to consider -H_0
             # in order to have a solution labeled by a string of 1s
             H_c = -sum(H_0) + penalty * sum(H_int)
+            print(H_c.diag())
             energies, eigenstates = H_c.eigenstates(sort = 'low')
 
             degeneracy = next((i for i, x in enumerate(np.diff(energies)) if x), 1) + 1

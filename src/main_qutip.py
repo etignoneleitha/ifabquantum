@@ -196,6 +196,10 @@ data_header = " ".join(["{:>7} ".format(i) for i in results_data_names])
 
 
 print('Training ...')
+log_likelihood_grids = []
+kernel_opts = []
+kernel_matrices = []
+
 for i in range(nbayes):
     
     start_time = time.time()
@@ -207,6 +211,14 @@ for i in range(nbayes):
     qaoa_time = time.time() - start_time - bayes_time
     fidelity = fidelity_tot
     log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
+    log_likelihood_grids.append(log_marginal_likelihood_grid)
+    k_matrix, _ = gp.get_covariance_matrix()
+    kernel_matrices.append(k_matrix)
+    
+    if diff_evol_func == None:
+        kernel_opts.append(gp.samples)
+    else:
+        kernel_opts.append(gp.mcmc_samples)
     gp.fit(next_point, y_next_point)
     
     if diff_evol_func == None:
@@ -255,10 +267,12 @@ for i in range(nbayes):
     df.to_csv(folder + "/" + file_name , columns = results_data_names, header = data_header)
     
     if diff_evol_func == None:
-        np.savetxt(folder +"/"+ "step_{}_kernel_opt.dat".format(i), gp.samples)
+        np.save(folder +"/"+ "kernel_opt".format(i), np.array(kernel_opts, dtype = object))
     else:
-        np.savetxt(folder +"/"+ "step_{}_opt.dat".format(i), gp.mcmc_samples)
-    np.savetxt(folder +"/"+ "step_{}_likelihood_grid.dat".format(i), log_marginal_likelihood_grid)
+        np.save(folder +"/"+ "opt".format(i), np.array(kernel_opts, dtype = object))
+    np.save(folder +"/"+ "log_marg_likelihoods".format(i), np.array(log_likelihood_grids,  dtype = object))
+    np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
+
 
 
 
