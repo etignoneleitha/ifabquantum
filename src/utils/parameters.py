@@ -64,11 +64,5 @@ def parse_command_line():
                         default="./",
                         help="Directory for saving data"
                         )
-    parser.add_argument('--diff_evol_func',
-                        type=str,
-                        default=None,
-                        help="Deciding if having to go with mcmc or not"
-                        )
-
 
     return parser.parse_args()

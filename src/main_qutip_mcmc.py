@@ -34,8 +34,9 @@ num_nodes = args.num_nodes
 nwarmup = args.nwarmup
 average_connectivity = args.average_connectivity
 nbayes = args.nbayes
-kernel_optimizer = 'fmin_l_bfgs_b'
-diff_evol_func = None
+diff_evol_func = 'mc'
+kernel_optimizer = None
+    
 method = 'DIFF-EVOL'
 param_range = np.array([[0.01, np.pi], [0.01, np.pi]])   # extremes where to search for the values of gamma and beta
 
@@ -214,13 +215,16 @@ for i in range(nbayes):
     k_matrix, _ = gp.get_covariance_matrix()
     kernel_matrices.append(k_matrix)
     
-    kernel_opts.append(gp.samples)
+    kernel_opts.append(gp.mcmc_samples)
         
         
     #### FIT NEW POINT #####
     gp.fit(next_point, y_next_point)
     
-    params = np.exp(gp.kernel_.theta)
+    if diff_evol_func == None:
+        params = np.exp(gp.kernel_.theta)
+    else:
+        params = np.exp(gp.average_kernel_params)
     constant_kernel = params[0]
     corr_length = params[1]
     
