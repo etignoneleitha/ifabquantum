@@ -198,6 +198,7 @@ data_header = " ".join(["{:>7} ".format(i) for i in results_data_names])
 print('Training ...')
 log_likelihood_grids = []
 kernel_opts = []
+kernel_matrices = []
 
 for i in range(nbayes):
     
@@ -211,6 +212,9 @@ for i in range(nbayes):
     fidelity = fidelity_tot
     log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
     log_likelihood_grids.append(log_marginal_likelihood_grid)
+    k_matrix, _ = gp.get_covariance_matrix()
+    kernel_matrices.append(k_matrix)
+    
     if diff_evol_func == None:
         kernel_opts.append(gp.samples)
     else:
@@ -267,6 +271,8 @@ for i in range(nbayes):
     else:
         np.save(folder +"/"+ "opt".format(i), np.array(kernel_opts, dtype = object))
     np.save(folder +"/"+ "log_marg_likelihoods".format(i), np.array(log_likelihood_grids,  dtype = object))
+    np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
+
 
 
 
