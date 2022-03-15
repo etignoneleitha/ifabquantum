@@ -80,9 +80,8 @@ kernel = const_kern * mat_kern
 
 gp = MyGaussianProcessRegressor(kernel=kernel,
                                 optimizer= kernel_optimizer, #fmin_l_bfgs_bor differential_evolution
-                                #optimizer='differential_evolution', #fmin_l_bfgs_bor
                                 angles_bounds=param_range,
-                                n_restarts_optimizer=0,
+                                n_restarts_optimizer=9,
                                 gtol=1e-6,
                                 max_iter=1e4,
                                 diff_evol_func = diff_evol_func
@@ -98,7 +97,7 @@ print('\n\n\n')
 gp.fit(X_train, y_train)
 print(gp.get_covariance_matrix())
 
-
+#gp.get_acquisition_function(show = True, save = False)
 print('Just fitted data_ so now we have kernel and kernel_: ')
 print(gp.kernel)
 print(gp.kernel_)
@@ -179,7 +178,7 @@ for i_tr, x in enumerate(X_train):
                   np.exp(gp.kernel_.theta[0]), 
                   0, 0, 0, 0, 0, 0, 0]
                 )
-
+print('groundstate :',qaoa.gs_en)
 folder_name = file_name.split('.')[0]
 folder = os.path.join(output_folder, folder_name)
 os.makedirs(folder, exist_ok = True)
@@ -201,14 +200,13 @@ for i in range(nbayes):
     ### ONE STEP BAYES OPT ####
     next_point, n_it, avg_sqr_distances, std_pop_energy = gp.bayesian_opt_step(method)
     bayes_time = time.time() - start_time
-    
     ### EVALUATE QAOA AT NEXT POINT####
     fin_state, mean_energy, variance, fidelity_tot = qaoa.quantum_algorithm(next_point)
     qaoa_time = time.time() - start_time - bayes_time
     y_next_point = mean_energy
     fidelity = fidelity_tot
     approx_ratio = mean_energy/qaoa.gs_en
-    
+    #gp.get_acquisition_function(show = False, save = True)
     log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
     log_likelihood_grids.append(log_marginal_likelihood_grid)
     k_matrix, _ = gp.get_covariance_matrix()
