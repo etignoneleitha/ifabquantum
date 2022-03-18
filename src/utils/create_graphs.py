@@ -40,6 +40,16 @@ def create_random_regular_graph(num_nodes, degree=3, seed=1, name_plot=False):
         graph_name_file = str(name_plot)
         _plot_graph(G, graph_name_file)
     return G
+    
+def create_chain(num_nodes):
+
+    G = nx.Graph()
+    
+    for i in range(num_nodes - 1):
+        G.add_edge(i, i + 1)
+    print(G.edges)
+    exit()
+    return G
 
 
 def create_graph_usecase_insurance(n_customers: int,
