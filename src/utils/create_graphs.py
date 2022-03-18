@@ -42,7 +42,8 @@ def create_random_regular_graph(num_nodes, degree=3, seed=1, name_plot=False):
     return G
     
 def create_chain(num_nodes):
-
+    ''' Creates a simple chain of neighbouring spins'''
+    
     G = nx.Graph()
     
     for i in range(num_nodes - 1):
