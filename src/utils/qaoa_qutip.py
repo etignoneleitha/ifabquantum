@@ -175,6 +175,16 @@ class qaoa_qutip(object):
             deg = (degeneracy > 1)
             gs_en = energies[0]
             gs_states = [state_gs for state_gs in eigenstates[:degeneracy]]
+        
+        elif problem == 'ISING':
+            H_int = [(self.Id - self.Z[i] * self.Z[j]) / 2 for i, j in  self.G.edges]
+            H_c = sum(H_int)
+            energies, eigenstates = H_c.eigenstates(sort = 'low')
+            
+            degeneracy = next((i for i, x in enumerate(np.diff(energies)) if x), 1) + 1
+            deg = (degeneracy > 1)
+            gs_en = energies[0]
+            gs_states = [state_gs for state_gs in eigenstates[:degeneracy]]
 
         else:
             print("problem sohuld be one of the following: MIS, MAX-CUT")

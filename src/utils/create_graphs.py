@@ -48,8 +48,7 @@ def create_chain(num_nodes):
     
     for i in range(num_nodes - 1):
         G.add_edge(i, i + 1)
-    print(G.edges)
-    exit()
+
     return G
 
 

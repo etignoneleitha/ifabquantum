@@ -7,7 +7,8 @@ from utils.qaoa_qutip import *
 from utils.gaussian_process import *
 from utils.create_graphs import (create_random_graph,
                                  create_chair_graph,
-                                 create_random_regular_graph
+                                 create_random_regular_graph,
+                                 create_chain
                                  )
 from utils.parameters import parse_command_line
 from utils.default_params import *
@@ -49,9 +50,9 @@ name_plot = str(seed)
 ################ CREATE GRAPH AND QAOA ################
 
 
-G = create_random_regular_graph(num_nodes, degree=3, seed=1)
-
-qaoa = qaoa_qutip(G, problem="MIS")
+#G = create_random_regular_graph(num_nodes, degree=3, seed=1)
+G = create_chain(num_nodes)
+qaoa = qaoa_qutip(G, problem="ISING")
 gs_energy, gs_state, degeneracy = qaoa.gs_en, qaoa.gs_states, qaoa.deg
 
 print('Information on the hamiltonian')

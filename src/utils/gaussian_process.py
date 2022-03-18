@@ -174,7 +174,6 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
             func_min = obj
         else:
             raise ValueError("Unknown optimizer %s." % self.optimizer)
-        print('L ottimiz ritorna il valore migliore ', theta_opt)
         return theta_opt, func_min
 
     def fit(self, new_point, y_new_point):
@@ -291,6 +290,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         cdf = ndtr((f_prime - f_x)/sigma_x)
         pdf = 1/(sigma_x*np.sqrt(2*np.pi)) * np.exp(-((f_prime -f_x)**2)/(2*sigma_x**2))
         alpha_function = (f_prime - f_x) * cdf + sigma_x * pdf
+        #print((f_prime - f_x) * cdf, sigma_x * pdf )
         return sign*alpha_function
 
 
@@ -473,7 +473,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         im = plt.imshow(K, origin = 'upper')
         plt.colorbar(im)
         if save:
-            plt.savefig('data/cov_matrix_iter={}.png'.format(len(self.X), self.kernel_))
+            plt.savefig(f'data/cov_matrix_iter={len(self.X)}.png')
         if show:
              plt.show()
 
@@ -501,7 +501,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         plt.show()
 
 
-    def plot_acquisition_function(self, show = True, save = False):
+    def get_acquisition_function(self, show = True, save = False):
         if len(self.X[0]) > 2:
             raise ValueError(
                         "Non si puo plottare l'AF a p>1"
@@ -511,19 +511,28 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         x = np.zeros((num, num))
         for i in range(num):
             for j in range(num):
-                x[j, i] = self.acq_func([i/num,j/num],self, 1)
+                x[j, i] = self.acq_func([i/num,j/num])
         im = plt.imshow(x, extent = [0,1,0,1], origin = 'lower')
 
         samples = np.array(self.X)
-        plt.scatter(samples[:len(self.X), 0], samples[:len(self.X),1], marker = '+', c = 'g')
+        x_points = samples[:len(self.X), 0]
+        y_points = samples[:len(self.X),1]
+        plt.scatter(x_points, y_points, marker = '+', c = 'g')
         plt.scatter(samples[-1, 0], samples[-1,1], marker = '+', c = 'r')
+        plt.xlabel('Gamma')
+        plt.ylabel('Beta')
+        for i, p in enumerate(samples):
+        
+            plt.annotate(f'{i}', p)
+            
         plt.colorbar(im)
         plt.title('data/ACQ F iter:{} kernel_{}'.format(len(self.X), self.kernel_))
-
         if save:
-            plt.savefig('data/acq_fun_iter={}.png'.format(len(self.X), self.kernel_))
+            plt.savefig('output/acq_fun_iter={}.png'.format(len(self.X)))
         if show:
             plt.show()
+        
+        return x
     
     def plot_log_marginal_likelihood(self, show = False, save = False):
         fig = plt.figure()
@@ -569,7 +578,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
             plt.ylabel('corr length')
             plt.colorbar(im)
             max = np.max(x)
-            plt.clim(max-2, max*1.05)
+            plt.clim(max-20, max*1.05)
             plt.title('log_marg_likelihood iter:{} kernel_{}'.format(len(self.X), self.kernel_))
         if save:
             plt.savefig('data/marg_likelihood_iter={}_kernel={}.png'.format(len(self.X), self.kernel_))
