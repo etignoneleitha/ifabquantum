@@ -159,36 +159,72 @@ class qaoa_qutip(object):
             ## Hamiltonian_cost is minimized by qaoa so we need to consider -H_0
             # in order to have a solution labeled by a string of 1s
             H_c = -sum(H_0) + penalty * sum(H_int)
-            energies, eigenstates = H_c.eigenstates(sort = 'low')
-
-            degeneracy = next((i for i, x in enumerate(np.diff(energies)) if x), 1) + 1
-            deg = (degeneracy > 1)
-            gs_en = energies[0]
-            gs_states = [state_gs for state_gs in eigenstates[:degeneracy]]
+            
 
         elif problem == "MAX-CUT":
             H_int = [(self.Id - self.Z[i] * self.Z[j]) / 2 for i, j in  self.G.edges]
             H_c = -1 * sum(H_int)
-            energies, eigenstates = H_c.eigenstates(sort = 'low')
-
-            degeneracy = next((i for i, x in enumerate(np.diff(energies)) if x), 1) + 1
-            deg = (degeneracy > 1)
-            gs_en = energies[0]
-            gs_states = [state_gs for state_gs in eigenstates[:degeneracy]]
         
         elif problem == 'ISING':
-            H_int = [(self.Id - self.Z[i] * self.Z[j]) / 2 for i, j in  self.G.edges]
+            H_int = [((-1) * self.Z[i] * self.Z[j]) / 2 for i, j in  self.G.edges]
             H_c = sum(H_int)
-            energies, eigenstates = H_c.eigenstates(sort = 'low')
-            
-            degeneracy = next((i for i, x in enumerate(np.diff(energies)) if x), 1) + 1
-            deg = (degeneracy > 1)
-            gs_en = energies[0]
-            gs_states = [state_gs for state_gs in eigenstates[:degeneracy]]
 
+        elif problem == 'ISING_TRANSV':
+            H_0 = [-1*self.X[i] / 2 for i in range(self.N)]
+            H_int = H_int = [( (-1)* self.Z[i] * self.Z[j]) / 2 for i, j in  self.G.edges]
+            H_c = -sum(H_0) + sum(H_int)
+        
+        elif problem == 'H2':
+            if self.N != 4:
+                print('WARNING\n you are running this with the incorrect'
+                        f'number of nodes, shoule be 4 but you set {self.N}')
+            h=0.81261
+            h_0=0.171201
+            h_1=0.171201
+            h_2=0.2227965
+            h_3=0.2227965
+            h_10=0.16862325
+            h_20=0.12054625
+            h_21=0.165868
+            h_30=0.165868
+            h_31=0.12054625
+            h_32=0.17434925
+            h_xxyy=0.04532175
+            h_xyyx=0.04532175
+            h_yxxy=0.04532175
+            h_yyxx=0.04532175
+            
+            H_one = (-1)* h * self.Id \
+                        + h_0 * self.Z[0] \
+                        + h_1 * self.Z[1] \
+                        - h_2 * self.Z[2] \
+                        - h_3 * self.Z[3] 
+            
+            H_two = h_10 * self.Z[1] * self.Z[0] \
+                    + h_20 * self.Z[2] * self.Z[0] \
+                    + h_21 * self.Z[2] * self.Z[1] \
+                    + h_30 * self.Z[3] * self.Z[0] \
+                    + h_31 * self.Z[3] * self.Z[1] \
+                    + h_32 * self.Z[3] * self.Z[2] 
+                    
+            H_three = (-1)* h_xxyy*self.X[3]*self.X[2]*self.Y[1]*self.Y[0] \
+                          + h_xyyx*self.X[3]*self.Y[2]*self.Y[1]*self.X[0] \
+                          + h_yxxy*self.Y[3]*self.X[2]*self.X[1]*self.Y[0] \
+                          - h_yyxx*self.Y[3]*self.Y[2]*self.X[1]*self.X[0] 
+                          
+            H_c = H_one + H_two + H_three
+            
+        
         else:
             print("problem sohuld be one of the following: MIS, MAX-CUT")
             exit(-1)
+            
+        energies, eigenstates = H_c.eigenstates(sort = 'low')
+        degeneracy = next((i for i, x in enumerate(np.diff(energies)) if x), 1) + 1
+        deg = (degeneracy > 1)
+        gs_en = energies[0]
+        gs_states = [state_gs for state_gs in eigenstates[:degeneracy]]
+            
         return H_c, gs_states, gs_en, deg
 
 

@@ -50,16 +50,16 @@ name_plot = str(seed)
 ################ CREATE GRAPH AND QAOA ################
 
 
-G = create_random_regular_graph(num_nodes, degree=3, seed=1)
-#G = create_chain(num_nodes)
-qaoa = qaoa_qutip(G, problem="MIS")
+#G = create_random_regular_graph(num_nodes, degree=3, seed=1)
+G = create_chain(num_nodes)
+qaoa = qaoa_qutip(G, problem="H2")
 gs_energy, gs_state, degeneracy = qaoa.gs_en, qaoa.gs_states, qaoa.deg
 
 
 print('Information on the hamiltonian')
 print('GS energy: ',gs_energy)
 print('GS degeneracy: ', degeneracy)
-print('GS: ', qaoa.gs_binary, '\n\n\n')
+print('GS: ', qaoa.gs_states[0], '\n\n\n')
 
 DEFAULT_PARAMS["seed"] = seed + i_trial
 
