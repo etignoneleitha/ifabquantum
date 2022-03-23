@@ -17,14 +17,12 @@ from sklearn.preprocessing import StandardScaler
 import random
 import dill
 import warnings
-#import zeus
-# warnings.filterwarnings("error")
 from sklearn.exceptions import ConvergenceWarning
 from pathlib import Path
 
-import tensorflow.compat.v2 as tf
-tf.enable_v2_behavior()
-import tensorflow_probability as tfp
+#import tensorflow.compat.v2 as tf
+#tf.enable_v2_behavior()
+#import tensorflow_probability as tfp
 
 
 # Allows to change max_iter (see cell below) as well as gtol.
