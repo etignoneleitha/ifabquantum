@@ -64,5 +64,11 @@ def parse_command_line():
                         default="./",
                         help="Directory for saving data"
                         )
+                        
+    parser.add_argument('--link_noise',
+                        type=float,
+                        default=0.0,
+                        help="Std of the noise added to the links of the graph"
+                        )
 
     return parser.parse_args()

@@ -34,6 +34,7 @@ num_nodes = args.num_nodes
 nwarmup = args.nwarmup
 average_connectivity = args.average_connectivity
 nbayes = args.nbayes
+link_noise = args.link_noise
 kernel_optimizer = 'fmin_l_bfgs_b'
 diff_evol_func = None
 method = 'DIFF-EVOL'
@@ -50,7 +51,11 @@ name_plot = str(seed)
 
 
 G = create_random_regular_graph(num_nodes, degree=3, seed=1)
-qaoa = qaoa_qutip(G, problem="MIS")
+qaoa = qaoa_qutip(
+                G, 
+                link_noise = link_noise,
+                problem="MIS"
+                )
 gs_energy, gs_state, degeneracy = qaoa.gs_en, qaoa.gs_states, qaoa.deg
 
 
@@ -125,7 +130,7 @@ def angle_names_string():
     return angle_names
         
 output_folder = Path(__file__).parents[1] / "output"
-file_name = f'lfgbs_p_{depth}_punti_{nwarmup + nbayes}_warmup_{nwarmup}_train_{nbayes}_trial_{i_trial}_graph_{name_plot}.dat'
+file_name = f'lfgbs_p_{depth}_warmup_{nwarmup}_train_{nbayes}_graph_1_seed_{seed}_link_noise_{link_noise}.dat'
 data_ = []
 angle_names = angle_names_string()
 results_data_names = ['iter '] + angle_names +\
