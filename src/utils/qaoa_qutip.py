@@ -19,7 +19,7 @@ from scipy.stats import qmc
 
 class qaoa_qutip(object):
 
-    def __init__(self, G, problem="MIS"):
+    def __init__(self, G,  problem="MIS",):
         self.G = G
         self.N = len(G)
         L =  self.N
@@ -56,7 +56,10 @@ class qaoa_qutip(object):
 
         self.Had = [(self.X[j] + self.Z[j]) / np.sqrt(2) for j in range(L)]
 
-        H_c, gs_states, gs_en, deg = self.hamiltonian_cost(problem=problem, penalty=DEFAULT_PARAMS["penalty"])
+        H_c, gs_states, gs_en, deg = self.hamiltonian_cost(
+                                                    problem=problem, 
+                                                    penalty=DEFAULT_PARAMS["penalty"]
+                                                    )
 
         self.H_c = H_c
         self.gs_states = gs_states
@@ -153,13 +156,23 @@ class qaoa_qutip(object):
 
 
     def hamiltonian_cost(self, problem, penalty):
+    
         if problem == "MIS":
             H_0 = [-1*self.Z[i] / 2 for i in range(self.N)]
-            H_int = [(self.Z[i] * self.Z[j] - self.Z[i] - self.Z[j]) / 4 for i, j in  self.G.edges]
+            H_int = [
+                (self.Z[i] * self.Z[j] - self.Z[i] - self.Z[j]) / 4 
+                for i, j in  self.G.edges
+                ]
+                
+            penalty_noise = np.random.normal(penalty, link_noise, len(self.G.edges))
+            H_int_noise = [
+                penalty_noise[k]*(self.Z[i] * self.Z[j] - self.Z[i] - self.Z[j]) / 4 
+                for k, [i, j] in  enumerate(self.G.edges)
+                ]
+                
             ## Hamiltonian_cost is minimized by qaoa so we need to consider -H_0
             # in order to have a solution labeled by a string of 1s
             H_c = -sum(H_0) + penalty * sum(H_int)
-            
 
         elif problem == "MAX-CUT":
             H_int = [(self.Id - self.Z[i] * self.Z[j]) / 2 for i, j in  self.G.edges]
@@ -178,7 +191,7 @@ class qaoa_qutip(object):
             if self.N != 4:
                 print('WARNING\n you are running this with the incorrect'
                         f'number of nodes, shoule be 4 but you set {self.N}')
-            h=0.81261
+            h=-0.098834850
             h_0=0.171201
             h_1=0.171201
             h_2=0.2227965
