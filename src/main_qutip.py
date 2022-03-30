@@ -49,9 +49,8 @@ name_plot = str(seed)
 ################ CREATE GRAPH AND QAOA ################
 
 
-#G = create_random_regular_graph(num_nodes, degree=3, seed=1)
-G = create_chain(4)
-qaoa = qaoa_qutip(G, problem="H2")
+G = create_random_regular_graph(num_nodes, degree=3, seed=1)
+qaoa = qaoa_qutip(G, problem="MIS")
 gs_energy, gs_state, degeneracy = qaoa.gs_en, qaoa.gs_states, qaoa.deg
 
 print('Information on the hamiltonian')
@@ -259,12 +258,12 @@ for i in range(nbayes):
     df = pd.DataFrame(data = data_, columns = results_data_names)
     df.to_csv(folder + "/" + file_name , columns = results_data_names, header = data_header)
     
-    if diff_evol_func == None:
-        np.save(folder +"/"+ "kernel_opt".format(i), np.array(kernel_opts, dtype = object))
-    else:
-        np.save(folder +"/"+ "opt".format(i), np.array(kernel_opts, dtype = object))
-    np.save(folder +"/"+ "log_marg_likelihoods".format(i), np.array(log_likelihood_grids,  dtype = object))
-    np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
+   #  if diff_evol_func == None:
+#         np.save(folder +"/"+ "kernel_opt".format(i), np.array(kernel_opts, dtype = object))
+#     else:
+#         np.save(folder +"/"+ "opt".format(i), np.array(kernel_opts, dtype = object))
+#     np.save(folder +"/"+ "log_marg_likelihoods".format(i), np.array(log_likelihood_grids,  dtype = object))
+#     np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
 
 
 
