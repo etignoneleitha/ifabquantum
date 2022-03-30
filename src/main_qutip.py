@@ -123,7 +123,7 @@ def angle_names_string():
     return angle_names
         
 output_folder = Path(__file__).parents[1] / "output"
-file_name = f'lfgbs_p_{depth}_punti_{nwarmup + nbayes}_warmup_{nwarmup}_train_{nbayes}_trial_{i_trial}_graph_{name_plot}.dat'
+file_name = f'lfgbs_p_{depth}_warmup_{nwarmup}_train_{nbayes}_num_nodes_{num_nodes}.dat'
 data_ = []
 angle_names = angle_names_string()
 results_data_names = ['iter '] + angle_names +\

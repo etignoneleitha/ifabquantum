@@ -164,12 +164,6 @@ class qaoa_qutip(object):
                 for i, j in  self.G.edges
                 ]
                 
-            penalty_noise = np.random.normal(penalty, link_noise, len(self.G.edges))
-            H_int_noise = [
-                penalty_noise[k]*(self.Z[i] * self.Z[j] - self.Z[i] - self.Z[j]) / 4 
-                for k, [i, j] in  enumerate(self.G.edges)
-                ]
-                
             ## Hamiltonian_cost is minimized by qaoa so we need to consider -H_0
             # in order to have a solution labeled by a string of 1s
             H_c = -sum(H_0) + penalty * sum(H_int)
