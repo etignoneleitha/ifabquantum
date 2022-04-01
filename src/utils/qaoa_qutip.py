@@ -19,7 +19,7 @@ from scipy.stats import qmc
 
 class qaoa_qutip(object):
 
-    def __init__(self, G,  problem="MIS",):
+    def __init__(self, G,  problem="MIS"):
         self.G = G
         self.N = len(G)
         L =  self.N
@@ -56,7 +56,7 @@ class qaoa_qutip(object):
 
         self.Had = [(self.X[j] + self.Z[j]) / np.sqrt(2) for j in range(L)]
 
-        H_c, gs_states, gs_en, deg = self.hamiltonian_cost(
+        H_c, gs_states, gs_en, deg, eigenstates = self.hamiltonian_cost(
                                                     problem=problem, 
                                                     penalty=DEFAULT_PARAMS["penalty"]
                                                     )
@@ -185,7 +185,7 @@ class qaoa_qutip(object):
             if self.N != 4:
                 print('WARNING\n you are running this with the incorrect'
                         f'number of nodes, shoule be 4 but you set {self.N}')
-            h=-0.098834850
+            h=0.098834850
             h_0=0.171201
             h_1=0.171201
             h_2=0.2227965
@@ -232,7 +232,7 @@ class qaoa_qutip(object):
         gs_en = energies[0]
         gs_states = [state_gs for state_gs in eigenstates[:degeneracy]]
             
-        return H_c, gs_states, gs_en, deg
+        return H_c, gs_states, gs_en, deg, eigenstates
 
 
     def evaluate_cost(self, configuration):
