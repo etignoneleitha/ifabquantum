@@ -56,15 +56,17 @@ class qaoa_qutip(object):
 
         self.Had = [(self.X[j] + self.Z[j]) / np.sqrt(2) for j in range(L)]
 
-        H_c, gs_states, gs_en, deg, eigenstates = self.hamiltonian_cost(
-                                                    problem=problem, 
-                                                    penalty=DEFAULT_PARAMS["penalty"]
-                                                    )
+        H_c, gs_states, gs_en, deg, eigenstates, eigenvalues= self.hamiltonian_cost(
+                                                                problem=problem, 
+                                                                penalty=DEFAULT_PARAMS["penalty"]
+                                                                )
 
         self.H_c = H_c
         self.gs_states = gs_states
         self.gs_en = gs_en
         self.deg = deg
+        self.eigenstates = eigenstates
+        self.energies = eigenvalues
 
         self.gs_binary = self.binary_gs(gs_states)
 
@@ -232,7 +234,7 @@ class qaoa_qutip(object):
         gs_en = energies[0]
         gs_states = [state_gs for state_gs in eigenstates[:degeneracy]]
             
-        return H_c, gs_states, gs_en, deg, eigenstates
+        return H_c, gs_states, gs_en, deg, eigenstates, energies
 
 
     def evaluate_cost(self, configuration):
