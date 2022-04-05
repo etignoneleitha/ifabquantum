@@ -64,5 +64,12 @@ def parse_command_line():
                         default="./",
                         help="Directory for saving data"
                         )
+                        
+    parser.add_argument('--problem',
+                        type=str,
+                        default="MIS",
+                        help=("Type of problem to solve"
+                                "Choose between MIS, MAX-CUT, ISING, H2, H2_reduced")
+                        )
 
     return parser.parse_args()

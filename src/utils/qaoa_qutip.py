@@ -1,7 +1,7 @@
 import networkx as nx
 from collections import Counter, defaultdict, namedtuple
 from itertools import product
-# import pandas as pd
+import pandas as pd
 import random
 import numpy as np
 
@@ -108,14 +108,23 @@ class qaoa_qutip(object):
         return U
 
 
+    # def U_c(self, gamma):
+#         # evolution operator of U_c
+#         eigen_energies = np.diagonal(self.H_c)
+#         evol_op = []
+#         for j_state, el in enumerate(eigen_energies):
+#             bin_state = np.binary_repr(j_state, self.N)
+#             eigen_state =  qu.tensor([qu.basis(2, int(e_state)) for e_state in bin_state])
+#             evol_op.append(np.exp(-1j * el * gamma) * eigen_state * eigen_state.dag())
+#         U = sum(evol_op)
+# 
+#         return U
+
     def U_c(self, gamma):
         # evolution operator of U_c
-        eigen_energies = np.diagonal(self.H_c)
         evol_op = []
-        for j_state, el in enumerate(eigen_energies):
-            bin_state = np.binary_repr(j_state, self.N)
-            eigen_state =  qu.tensor([qu.basis(2, int(e_state)) for e_state in bin_state])
-            evol_op.append(np.exp(-1j * el * gamma) * eigen_state * eigen_state.dag())
+        for energy, eigen_state in zip(self.energies, self.eigenstates):
+            evol_op.append(np.exp(-1j * energy * gamma) * eigen_state * eigen_state.dag())
         U = sum(evol_op)
 
         return U
@@ -187,6 +196,12 @@ class qaoa_qutip(object):
             if self.N != 4:
                 print('WARNING\n you are running this with the incorrect'
                         f'number of nodes, shoule be 4 but you set {self.N}')
+            ''' Hamiltonian in the JW repr taken from eq(80) of Seeley
+                The Bravyi-Kitaev transformation for quantum computation of
+                electronic structure
+                Only the coefficient of h_0 is different to rescale the energy
+                to ~ -1.3'''
+                
             h=0.098834850
             h_0=0.171201
             h_1=0.171201
@@ -203,12 +218,14 @@ class qaoa_qutip(object):
             h_yxxy=0.04532175
             h_yyxx=0.04532175
             
+            #one qubit hamiltonian
             H_one = (-1)* h * self.Id \
                         + h_0 * self.Z[0] \
                         + h_1 * self.Z[1] \
                         - h_2 * self.Z[2] \
                         - h_3 * self.Z[3] 
-            
+                        
+            #two qubit hamiltonian
             H_two = h_10 * self.Z[1] * self.Z[0] \
                     + h_20 * self.Z[2] * self.Z[0] \
                     + h_21 * self.Z[2] * self.Z[1] \
@@ -216,12 +233,31 @@ class qaoa_qutip(object):
                     + h_31 * self.Z[3] * self.Z[1] \
                     + h_32 * self.Z[3] * self.Z[2] 
                     
-            H_three = (-1)* h_xxyy*self.X[3]*self.X[2]*self.Y[1]*self.Y[0] \
+            #four qubit hamiltonian    
+            H_four = (-1)* h_xxyy*self.X[3]*self.X[2]*self.Y[1]*self.Y[0] \
                           + h_xyyx*self.X[3]*self.Y[2]*self.Y[1]*self.X[0] \
                           + h_yxxy*self.Y[3]*self.X[2]*self.X[1]*self.Y[0] \
                           - h_yyxx*self.Y[3]*self.Y[2]*self.X[1]*self.X[0] 
-                          
-            H_c = H_one + H_two + H_three
+            
+            H_c = H_one + H_two + H_four
+            
+        elif problem == 'H2_reduced':
+            '''following notation from eq(1) O'Malley Scalable Quantum 
+               Simulation of Molecular Energies'''
+            g_0=-0.5707
+            g_1=0.2048
+            g_2=-0.0929
+            g_3=0.4588
+            g_4=0.1116
+            g_5=0.1116 
+            
+            H_one = g_0 * self.Id + g_1 * self.Z[0] + g_2 * self.Z[1]
+            
+            H_two = g_3 * self.Z[0] * self.Z[1] \
+                    + g_4 * self.Y[0] * self.Y[1] \
+                    + g_5 * self.X[0] * self.X[1] 
+                    
+            H_c = H_one + H_two
             
         
         else:
@@ -232,6 +268,16 @@ class qaoa_qutip(object):
         degeneracy = next((i for i, x in enumerate(np.diff(energies)) if x), 1) + 1
         deg = (degeneracy > 1)
         gs_en = energies[0]
+        
+        # matrix = np.column_stack([eigenstates[i].full() for i in range(len(eigenstates))])
+#         matrix_2 = np.zeros((16, 17))
+#         matrix_2[:,0] = energies
+#         matrix_2[:,1 :] = matrix.T
+#         col_names = ['energies'] + [str(np.binary_repr(i ,4)) for i in range(16)]
+#         df = pd.DataFrame(matrix_2, columns = col_names)
+#         pd.set_option('display.precision', 3)
+#         df.save_to_csv()
+#         exit()
         gs_states = [state_gs for state_gs in eigenstates[:degeneracy]]
             
         return H_c, gs_states, gs_en, deg, eigenstates, energies

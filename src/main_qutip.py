@@ -33,6 +33,7 @@ i_trial = args.i_trial
 num_nodes = args.num_nodes
 nwarmup = args.nwarmup
 average_connectivity = args.average_connectivity
+problem = args.problem
 nbayes = args.nbayes
 kernel_optimizer = 'fmin_l_bfgs_b'
 diff_evol_func = None
@@ -49,9 +50,14 @@ name_plot = str(seed)
 ################ CREATE GRAPH AND QAOA ################
 
 
-#G = create_random_regular_graph(num_nodes, degree=3, seed=1)
-G = create_chain(4)
-qaoa = qaoa_qutip(G, problem="H2")
+if problem == 'H2':
+    G = create_chain(4)
+elif problem == 'H2_reduced':
+    G = create_chain(2)
+else:
+    G = create_random_regular_graph(num_nodes, degree=3, seed=1)
+    
+qaoa = qaoa_qutip(G, problem=problem)
 gs_energy, gs_state, degeneracy = qaoa.gs_en, qaoa.gs_states, qaoa.deg
 
 print('Information on the hamiltonian')
@@ -59,7 +65,7 @@ print('GS energy: ',gs_energy)
 print('GS binary:', qaoa.gs_binary)
 print('GS degeneracy: ', degeneracy)
 print('GS :', qaoa.gs_states[0])
-exit()
+print('ham :, ', qaoa.H_c)
 DEFAULT_PARAMS["seed"] = seed + i_trial
 
 
@@ -199,6 +205,7 @@ for i in range(nbayes):
     ### ONE STEP BAYES OPT ####
     next_point, n_it, avg_sqr_distances, std_pop_energy = gp.bayesian_opt_step(method)
     bayes_time = time.time() - start_time
+    
     ### EVALUATE QAOA AT NEXT POINT####
     fin_state, mean_energy, variance, fidelity_tot = qaoa.quantum_algorithm(next_point)
     qaoa_time = time.time() - start_time - bayes_time
@@ -206,13 +213,13 @@ for i in range(nbayes):
     fidelity = fidelity_tot
     approx_ratio = mean_energy/qaoa.gs_en
     #gp.get_acquisition_function(show = False, save = True)
-    log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
-    log_likelihood_grids.append(log_marginal_likelihood_grid)
-    k_matrix, _ = gp.get_covariance_matrix()
-    kernel_matrices.append(k_matrix)
-    
-    kernel_opts.append(gp.samples)
-        
+    # log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
+#     log_likelihood_grids.append(log_marginal_likelihood_grid)
+#     k_matrix, _ = gp.get_covariance_matrix()
+#     kernel_matrices.append(k_matrix)
+#     
+#     kernel_opts.append(gp.samples)
+#         
         
     #### FIT NEW POINT #####
     gp.fit(next_point, y_next_point)
@@ -229,7 +236,7 @@ for i in range(nbayes):
         best_approx_ratio = approx_ratio
         
     kernel_time = time.time() - start_time - qaoa_time - bayes_time
-    print('now kernel is:', gp.kernel_)
+    print('\nKernel', gp.kernel_)
     step_time = time.time() - start_time
     
     new_data = ([i + 1] +
@@ -254,7 +261,8 @@ for i in range(nbayes):
                  ]
                )
     data_.append(new_data)
-    print(i +1 ,'/', nbayes, mean_energy, variance, fidelity_tot, *next_point)
+    print(f'{i +1}/{nbayes}, en: {mean_energy}, var: {variance}, '
+          f'fid: {fidelity_tot},\n {next_point}')
     
     df = pd.DataFrame(data = data_, columns = results_data_names)
     df.to_csv(folder + "/" + file_name , columns = results_data_names, header = data_header)
