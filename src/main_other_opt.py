@@ -157,9 +157,11 @@ results = minimize(qaoa_wrapper,
                    bounds = bounds)
 
 info_file_name = folder + "/" + 'info.csv'
-results = dict(results)
-df = pd.DataFrame.from_dict(results)
+res = {}
+for i in ['fun', 'nfev', 'message', 'x']:
+    res[i] = results[i]
+print(res)
+df = pd.DataFrame.from_dict(res)
 df.to_csv(info_file_name)
-print(results)
 
 
