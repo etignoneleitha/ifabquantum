@@ -67,7 +67,7 @@ def parse_command_line():
                         
     parser.add_argument('--link_noise',
                         type=float,
-                        default=0.0,
+                        default=0.01,
                         help="Std of the noise added to the links of the graph"
                         )
 

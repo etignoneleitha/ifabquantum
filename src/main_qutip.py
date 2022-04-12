@@ -18,8 +18,6 @@ import pandas as pd
 from sklearn.metrics.pairwise import euclidean_distances
 
 np.set_printoptions(precision=4, suppress=True)
-
-
     
 ################### PARAMETERS   ################
 
@@ -81,7 +79,8 @@ mat_kern = Matern(
                   length_scale_bounds=DEFAULT_PARAMS['length_scale_bounds'], 
                   nu=1.5
                   )
-kernel = const_kern * mat_kern
+                  
+kernel = const_kern * mat_kern + WhiteKernel(noise_level=0.5, noise_level_bounds=(1e-05, 100))
 
 gp = MyGaussianProcessRegressor(kernel=kernel,
                                 optimizer= kernel_optimizer, #fmin_l_bfgs_bor differential_evolution
@@ -115,7 +114,6 @@ print('\ncompared to')
 print(gp.get_covariance_matrix())
 
 
-
 ############### CREATE DATA ###############
 
 def angle_names_string():
@@ -144,6 +142,7 @@ results_data_names = ['iter '] + angle_names +\
                                  'variance',
                                  'corr_length',
                                  'const_kernel',
+                                 'noise_level',
                                  'std_energies',
                                  'average_distances',
                                  'nit',
@@ -179,8 +178,9 @@ for i_tr, x in enumerate(X_train):
                   fidelity_tot,
                   best_fidelity,
                   variance,
-                  np.exp(gp.kernel_.theta[1]),
-                  np.exp(gp.kernel_.theta[0]), 
+                  np.exp(gp.kernel_.theta)[1],
+                  np.exp(gp.kernel_.theta)[0], 
+                  np.exp(gp.kernel_.theta)[2],
                   0, 0, 0, 0, 0, 0, 0]
                 )
 print('groundstate :',qaoa.gs_en)
@@ -199,7 +199,7 @@ kernel_opts = []
 kernel_matrices = []
 
 for i in range(nbayes):
-    
+    print('link_noise', link_noise)
     start_time = time.time()
     
     ### ONE STEP BAYES OPT ####
@@ -212,8 +212,8 @@ for i in range(nbayes):
     fidelity = fidelity_tot
     approx_ratio = mean_energy/qaoa.gs_en
     #gp.get_acquisition_function(show = False, save = True)
-    log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
-    log_likelihood_grids.append(log_marginal_likelihood_grid)
+    #log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
+    #log_likelihood_grids.append(log_marginal_likelihood_grid)
     k_matrix, _ = gp.get_covariance_matrix()
     kernel_matrices.append(k_matrix)
     
@@ -226,6 +226,7 @@ for i in range(nbayes):
     params = np.exp(gp.kernel_.theta)
     constant_kernel = params[0]
     corr_length = params[1]
+    noise_level = params[2]
     
     if mean_energy < best_energy:
             best_energy = mean_energy
@@ -250,6 +251,7 @@ for i in range(nbayes):
                  variance,
                  corr_length,
                  constant_kernel,
+                 noise_level,
                  std_pop_energy,
                  avg_sqr_distances,
                  n_it,
@@ -265,12 +267,13 @@ for i in range(nbayes):
     df = pd.DataFrame(data = data_, columns = results_data_names)
     df.to_csv(folder + "/" + file_name , columns = results_data_names, header = data_header)
     
-    if diff_evol_func == None:
-        np.save(folder +"/"+ "kernel_opt".format(i), np.array(kernel_opts, dtype = object))
-    else:
-        np.save(folder +"/"+ "opt".format(i), np.array(kernel_opts, dtype = object))
-    np.save(folder +"/"+ "log_marg_likelihoods".format(i), np.array(log_likelihood_grids,  dtype = object))
-    np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
+    # if diff_evol_func == None:
+#         np.save(folder +"/"+ "kernel_opt".format(i), np.array(kernel_opts, dtype = object))
+#     else:
+#         np.save(folder +"/"+ "opt".format(i), np.array(kernel_opts, dtype = object))
+#     np.save(folder +"/"+ "log_marg_likelihoods".format(i), np.array(log_likelihood_grids,  dtype = object))
+#     np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
+
 
 
 
