@@ -197,8 +197,8 @@ class qaoa_qutip(object):
                 print('WARNING\n you are running this with the incorrect'
                         f'number of nodes, shoule be 4 but you set {self.N}')
             ''' Hamiltonian in the JW repr taken from eq(80) of Seeley
-                The Bravyi-Kitaev transformation for quantum computation of
-                electronic structure
+                'The Bravyi-Kitaev transformation for quantum computation of
+                electronic structure'
                 Only the coefficient of h_0 is different to rescale the energy
                 to ~ -1.3'''
                 
@@ -241,10 +241,64 @@ class qaoa_qutip(object):
             
             H_c = H_one + H_two + H_four
             
+            print(H_c.eigenstates(sort = 'low'))
+           # proj = 0.25*self.Id -0.25*self.Z[0]*self.Z[1] \
+                #-0.25*self.Z[2]*self.Z[3] + 0.25*self.Z[0]*self.Z[1]*self.Z[2]*self.Z[3]
+            proj = 0.25*self.Id -0.25*self.Z[0]*self.Z[2] \
+                -0.25*self.Z[1]*self.Z[3] + 0.25*self.Z[0]*self.Z[1]*self.Z[2]*self.Z[3]
+                
+            H_red = proj.conj() * H_c * proj
+            print(H_red)
+            H_red_shift = qu.Qobj(np.real(H_red[4:12,4:12]), dims = [[2,2, 2],[2,2,2]])
+            print(H_red_shift)
+            
+            #now have to redefine operators acting on a L-1 qubit space
+            dimQ = 2
+            L = 3
+            Id_3 = qu.tensor([qu.qeye(dimQ)] * L)
+
+            temp = [[qu.qeye(dimQ)] * j +
+                    [qu.sigmax()] +
+                    [qu.qeye(dimQ)] * (L - j - 1)
+                    for j in range(L)
+                    ]
+
+            X_3 = [qu.tensor(temp[j]) for j in range(L)]
+
+            temp = [[qu.qeye(dimQ)] * j +
+                    [qu.sigmay()] +
+                    [qu.qeye(dimQ)] * (L - j - 1)
+                    for j in range(L)
+                    ]
+            Y_3 = [qu.tensor(temp[j]) for j in range(L)]
+
+            temp = [[qu.qeye(dimQ)] * j +
+                    [qu.sigmaz()] +
+                    [qu.qeye(dimQ)] * (L - j - 1)
+                    for j in range(L)
+                    ]
+            Z_3 = [qu.tensor(temp[j]) for j in range(L)]
+            
+            
+            reorder = 0.5*(Id_3 + Z_3[0]*Z_3[2] \
+                         - Z_3[0]*X_3[1]*Z_3[2] + X_3[1])
+            print(reorder)
+            H_red_shift_reordered = reorder.conj() * H_red_shift * reorder
+            print(H_red_shift_reordered)
+            
+            H_red_shift_reordered_reshifted = qu.Qobj(np.real(H_red_shift_reordered[2:6, 2:6]),
+                                                        dims = [[2,2],[2,2]])
+            print(H_red_shift_reordered_reshifted)
+            
+            eig, eigsta = H_red_shift_reordered_reshifted.eigenstates(sort = 'low')
+            print(eig, eigsta)
+            exit()
+            
+            
         elif problem == 'H2_reduced':
             '''following notation from eq(1) O'Malley Scalable Quantum 
                Simulation of Molecular Energies'''
-            g_0=-0.5707
+            g_0=-0.1927
             g_1=0.2048
             g_2=-0.0929
             g_3=0.4588
@@ -256,6 +310,82 @@ class qaoa_qutip(object):
             H_two = g_3 * self.Z[0] * self.Z[1] \
                     + g_4 * self.Y[0] * self.Y[1] \
                     + g_5 * self.X[0] * self.X[1] 
+                    
+            H_c = H_one + H_two
+            
+            
+        elif problem == 'H2_BK':
+        
+            h=-0.81261
+            h_0=0.171201
+            h_1=0.16862325
+            h_2=-0.2227965
+            h_10=0.171201
+            h_20=0.12054625
+            h_31=0.17434925
+            h_xzx = 0.04532175
+            h_yzy = 0.04532175
+            h_210 = 0.165868
+            h_320 = 0.12054625
+            h_321 = -0.2227965
+            h_zxzx = 0.04532175
+            h_zyzy = 0.04532175
+            h_3210 = 0.165868
+            
+            #one qubit hamiltonian
+            H_one =   h * self.Id \
+                    + h_0 * self.Z[0] \
+                    + h_1 * self.Z[1] \
+                    + h_2 * self.Z[2] 
+                        
+            #two qubit hamiltonian
+            H_two = h_10 * self.Z[1] * self.Z[0] \
+                    + h_20 * self.Z[2] * self.Z[0] \
+                    + h_31 * self.Z[3] * self.Z[1] 
+                
+            H_three =    h_xzx*self.X[2]*self.Z[1]*self.X[0] \
+                      +  h_xzx*self.Y[2]*self.Z[1]*self.Y[0] \
+                      +  h_210*self.Z[2]*self.Z[1]*self.Z[0] \
+                      +  h_320*self.Z[3]*self.Z[2]*self.Z[0] \
+                      +  h_321*self.Z[3]*self.Z[2]*self.Z[1] 
+                         
+            #four qubit hamiltonian    
+            H_four =    h_zxzx*self.Z[3]*self.X[2]*self.Z[1]*self.X[0] \
+                      + h_zyzy*self.Z[3]*self.Y[2]*self.Z[1]*self.Y[0] \
+                      + h_3210*self.Z[3]*self.Z[2]*self.Z[1]*self.Z[0]
+            
+            H_c = H_one + H_two + H_three + H_four
+            
+        elif problem == 'H2_BK_reduced':
+        
+            h=-0.81261
+            h_0=0.171201
+            h_1=0.16862325
+            h_2=-0.2227965
+            h_10=0.171201
+            h_20=0.12054625
+            h_31=0.17434925
+            h_xzx = 0.04532175
+            h_yzy = 0.04532175
+            h_210 = 0.165868
+            h_320 = 0.12054625
+            h_321 = -0.2227965
+            h_zxzx = 0.04532175
+            h_zyzy = 0.04532175
+            h_3210 = 0.165868
+            
+            g_0 = h - h_1 - h_31
+            g_1 = h_0 - h_10
+            g_2 = h_2 - h_321
+            g_3 = h_20 - h_210 + h_320 - h_3210
+            g_4 = (-1)*h_xzx - h_zxzx
+            g_5 = (-1)*h_yzy - h_zyzy
+            
+            H_one = g_0 * self.Id + g_1 * self.Z[0] + g_2 * self.Z[1]
+            
+            H_two = g_3 * self.Z[0] * self.Z[1] \
+                    + g_4 * self.X[0] * self.X[1] \
+                    + g_5 * self.Y[0] * self.Y[1] 
                     
             H_c = H_one + H_two
             

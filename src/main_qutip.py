@@ -15,6 +15,7 @@ import time
 from pathlib import Path
 import os
 import pandas as pd
+import networkx as nx
 from sklearn.metrics.pairwise import euclidean_distances
 
 np.set_printoptions(precision=4, suppress=True)
@@ -50,9 +51,9 @@ name_plot = str(seed)
 ################ CREATE GRAPH AND QAOA ################
 
 
-if problem == 'H2':
+if problem == 'H2' or problem == 'H2_BK':
     G = create_chain(4)
-elif problem == 'H2_reduced':
+elif problem == 'H2_reduced' or problem == 'H2_BK_reduced':
     G = create_chain(2)
 else:
     G = create_random_regular_graph(num_nodes, degree=3, seed=1)
@@ -67,7 +68,7 @@ print('GS degeneracy: ', degeneracy)
 print('GS :', qaoa.gs_states[0])
 print('ham :, ', qaoa.H_c)
 DEFAULT_PARAMS["seed"] = seed + i_trial
-
+exit()
 
 ########### CREATE GP AND FIT TRAINING DATA  #####################
 

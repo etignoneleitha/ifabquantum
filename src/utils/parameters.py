@@ -71,5 +71,10 @@ def parse_command_line():
                         help=("Type of problem to solve"
                                 "Choose between MIS, MAX-CUT, ISING, H2, H2_reduced")
                         )
+    parser.add_argument('--optimizer',
+                        type=str,
+                        default="COBYLA",
+                        help=("Type of optimizer: COBYLA, L-BFGS-B, Nelder-Mead, SLSQP")
+                        )
 
     return parser.parse_args()
