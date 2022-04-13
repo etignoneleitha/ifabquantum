@@ -68,7 +68,6 @@ print('GS degeneracy: ', degeneracy)
 print('GS :', qaoa.gs_states[0])
 print('ham :, ', qaoa.H_c)
 DEFAULT_PARAMS["seed"] = seed + i_trial
-exit()
 
 ########### CREATE GP AND FIT TRAINING DATA  #####################
 

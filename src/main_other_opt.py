@@ -82,8 +82,9 @@ def angle_names_string():
     return angle_names
         
 output_folder = Path(__file__).parents[1] / "output"
-file_name = f'{optimizer_method}_p_{depth}_train_{nbayes}_num_nodes_{num_nodes}.dat'
-data_ = []
+file_name = f'{optimizer_method}_p_{depth}_train_{nbayes}_num_nodes_{num_nodes}'
+data_iter = []
+data_nfev = []
 angle_names = angle_names_string()
 results_data_names = ['iter '] + angle_names +\
                                  [
@@ -103,21 +104,18 @@ data_header = " ".join(["{:>7} ".format(i) for i in results_data_names])
 
 ###### FUNC WRAPPER and CALLBACK #######
 
-def qaoa_wrapper(next_point):
-    fin_state, mean_energy, variance, fidelity = qaoa.quantum_algorithm(next_point)
-    approx_ratio = mean_energy/qaoa.gs_en
-    
-    return mean_energy
-    
 best_energy = 10
 best_fidelity = 0
 best_approx_ratio = 0
 
-def callbackF(point):
-    global best_energy, best_fidelity, best_approx_ratio 
+def qaoa_wrapper(next_point):
     
-    fin_state, mean_energy, variance, fidelity = qaoa.quantum_algorithm(point)
+    '''This stores every call to the function in the data_nfev list'''
+    
+    fin_state, mean_energy, variance, fidelity = qaoa.quantum_algorithm(next_point)
     approx_ratio = mean_energy/qaoa.gs_en
+    
+    global best_energy, best_fidelity, best_approx_ratio 
     
         
     if mean_energy < best_energy:
@@ -127,7 +125,45 @@ def callbackF(point):
     if approx_ratio > best_approx_ratio:
         best_approx_ratio = approx_ratio
         
-    new_data = ([len(data_)] +
+    new_data = ([len(data_nfev)] +
+                 next_point.tolist() +
+                 [
+                 mean_energy,
+                 best_energy,
+                 approx_ratio,
+                 best_approx_ratio,
+                 fidelity,
+                 best_fidelity,
+                 variance
+                 ]
+               )
+    data_nfev.append(new_data)
+    
+    df = pd.DataFrame(data = data_nfev, columns = results_data_names)
+    df.to_csv(folder + "/" + file_name + '_nfev.dat', columns = results_data_names, header = data_header)
+    
+    return mean_energy
+    
+
+
+def callbackF(point):
+
+    '''This stores only one call to the function for each iteration of the
+    algorithm and this results are store in the data_iter list'''
+    
+    fin_state, mean_energy, variance, fidelity = qaoa.quantum_algorithm(point)
+    approx_ratio = mean_energy/qaoa.gs_en
+
+    global best_energy, best_fidelity, best_approx_ratio 
+    
+    if mean_energy < best_energy:
+        best_energy = mean_energy
+    if fidelity > best_fidelity:
+        best_fidelity = fidelity
+    if approx_ratio > best_approx_ratio:
+        best_approx_ratio = approx_ratio
+        
+    new_data = ([len(data_iter)] +
                  point.tolist() +
                  [
                  mean_energy,
@@ -139,12 +175,15 @@ def callbackF(point):
                  variance
                  ]
                )
-    data_.append(new_data)
-    print(f'{len(data_)}/{nbayes}, en: {mean_energy}, var: {variance}, '
+    data_iter.append(new_data)
+    print(f'{len(data_iter)}/{nbayes}, en: {mean_energy}, var: {variance}, '
           f'fid: {fidelity},\n {point}')
     
-    df = pd.DataFrame(data = data_, columns = results_data_names)
-    df.to_csv(folder + "/" + file_name , columns = results_data_names, header = data_header)
+    df = pd.DataFrame(data = data_iter, columns = results_data_names)
+    df.to_csv(folder + "/" + file_name + '_iterations.dat', columns = results_data_names, header = data_header)
+    
+    return mean_energy
+    
 
 #####  OPTIMIZATION   #############
 
