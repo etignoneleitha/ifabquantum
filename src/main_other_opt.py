@@ -82,7 +82,7 @@ def angle_names_string():
     return angle_names
         
 output_folder = Path(__file__).parents[1] / "output"
-file_name = f'{optimizer_method}_p_{depth}_train_{nbayes}_num_nodes_{num_nodes}'
+file_name = f'{optimizer_method}_p_{depth}_train_{nbayes}_num_nodes_{num_nodes}_seed_{seed}'
 data_iter = []
 data_nfev = []
 angle_names = angle_names_string()
