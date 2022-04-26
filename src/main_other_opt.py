@@ -226,10 +226,12 @@ elif optimizer_method == 'shgo':
                            )
 elif optimizer_method == 'dual_annealing':
     def callback_da(x, e, context):
-        return callbackF(x)
+        callbackF(x)
+        
     results = dual_annealing(qaoa_wrapper,
                             bounds = bounds,
-                            callback = callback_da
+                            callback = callback_da,
+                            maxfun = 150*depth,
                            
                            )
 else:
