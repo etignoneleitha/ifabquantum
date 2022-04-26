@@ -16,7 +16,7 @@ from pathlib import Path
 import os
 import pandas as pd
 import networkx as nx
-from scipy.optimize import minimize
+from scipy.optimize import minimize, basinhopping, differential_evolution, shgo, dual_annealing
 np.set_printoptions(precision=4, suppress=True)
 
 
@@ -187,20 +187,59 @@ def callbackF(point):
 
 #####  OPTIMIZATION   #############
 
-bounds = param_range.tolist()*depth
+bounds = np.array(param_range.tolist()*depth)
 init_point = np.random.uniform(param_range[0, 0], param_range[0,1], 2*depth)
-results = minimize(qaoa_wrapper, 
-                   x0 = init_point,
-                   method = optimizer_method,
-                   callback = callbackF,
-                   bounds = bounds)
+
+# class MyBounds:
+#     def __init__(self, xmax=bounds[:,1], xmin=bounds[:,0]):
+#         self.xmax = np.array(xmax)
+#         self.xmin = np.array(xmin)
+#     def __call__(self, **kwargs):
+#         print(**kwargs)
+#         exit()
+#         x = kwargs["x_new"]
+#         tmax = bool(np.all(x <= self.xmax))
+#         tmin = bool(np.all(x >= self.xmin))
+#         return tmax and tmin
+# 
+# mybounds = MyBounds()
+
+if optimizer_method == 'basinhopping':
+    
+    def callback_bh(x, fun, conv):
+        return callbackF(x)
+    results = basinhopping(qaoa_wrapper,
+                           x0 = init_point,
+                           callback = callback_bh,
+                           )
+elif optimizer_method == 'diff_evol':
+    def callback_de(x, convergence):
+        return callbackF(x)
+    results = differential_evolution(qaoa_wrapper,
+                                    bounds = bounds,
+                                    callback = callback_de
+                                    )
+elif optimizer_method == 'shgo':
+    results = shgo(qaoa_wrapper,
+                    bounds = bounds,
+                    callback = callbackF
+                           )
+elif optimizer_method == 'dual_annealing':
+    def callback_da(x, e, context):
+        return callbackF(x)
+    results = dual_annealing(qaoa_wrapper,
+                            bounds = bounds,
+                            callback = callback_da
+                           
+                           )
+else:
+    results = minimize(qaoa_wrapper, 
+                       x0 = init_point,
+                       method = optimizer_method,
+                       callback = callbackF,
+                       bounds = bounds)
 
 info_file_name = folder + "/" + 'info.csv'
-res = {}
-for i in ['fun', 'nfev', 'message', 'x']:
-    res[i] = results[i]
-print(res)
-df = pd.DataFrame.from_dict(res)
-df.to_csv(info_file_name)
+
 
 
