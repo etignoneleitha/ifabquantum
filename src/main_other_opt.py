@@ -59,6 +59,7 @@ else:
 qaoa = qaoa_qutip(G, problem=problem)
 gs_energy, gs_state, degeneracy = qaoa.gs_en, qaoa.gs_states, qaoa.deg
 
+
 print('Information on the hamiltonian')
 print('GS energy: ',gs_energy)
 print('GS binary:', qaoa.gs_binary)
@@ -66,7 +67,6 @@ print('GS degeneracy: ', degeneracy)
 print('GS :', qaoa.gs_states[0])
 print('ham :, ', qaoa.H_c)
 DEFAULT_PARAMS["seed"] = seed + i_trial
-
 
 ############### CREATE DATA FILE ###############
 
@@ -82,7 +82,7 @@ def angle_names_string():
     return angle_names
         
 output_folder = Path(__file__).parents[1] / "output"
-file_name = f'{optimizer_method}_p_{depth}_train_{nbayes}_num_nodes_{num_nodes}_seed_{seed}'
+file_name = f'{optimizer_method}_{problem}_p_{depth}_num_nodes_{num_nodes}_seed_{seed}'
 data_iter = []
 data_nfev = []
 angle_names = angle_names_string()
@@ -99,7 +99,7 @@ results_data_names = ['iter '] + angle_names +\
                      
 folder_name = file_name.split('.')[0]
 folder = os.path.join(output_folder, folder_name)
-os.makedirs(folder, exist_ok = True)
+os.makedirs(folder, exist_ok = False)
 data_header = " ".join(["{:>7} ".format(i) for i in results_data_names])
 
 ###### FUNC WRAPPER and CALLBACK #######
@@ -220,9 +220,11 @@ elif optimizer_method == 'diff_evol':
                                     callback = callback_de
                                     )
 elif optimizer_method == 'shgo':
+    op = {'maxiter':200*depth}
     results = shgo(qaoa_wrapper,
                     bounds = bounds,
-                    callback = callbackF
+                    callback = callbackF,
+                    options = op
                            )
 elif optimizer_method == 'dual_annealing':
     def callback_da(x, e, context):
@@ -231,7 +233,7 @@ elif optimizer_method == 'dual_annealing':
     results = dual_annealing(qaoa_wrapper,
                             bounds = bounds,
                             callback = callback_da,
-                            maxfun = 150*depth,
+                            maxfun = 200*depth,
                            
                            )
 else:

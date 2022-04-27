@@ -202,31 +202,100 @@ class qaoa_qutip(object):
                 Only the coefficient of h_0 is different to rescale the energy
                 to ~ -1.3'''
                 
-            h=0.098834850
+                
+            from openfermion.chem import MolecularData
+            from openfermion.transforms import get_fermion_operator, jordan_wigner
+            from openfermionpyscf import run_pyscf
+            
+            
+            bond_length = .7414
+            geometry = [ [ 'H' , [ 0 , 0 , 0 ] ] ,
+                           [ 'H' , [ 0 , 0 , bond_length] ] ]
+            basis= 'sto3g'
+            multiplicity = 1
+            charge = 0
+            description = str(bond_length)
+            
+            #create a molecule object with only general information, still no
+            #one-body or two-body integral have been calculated (they would return
+            #None now)
+            molecule= MolecularData(geometry , basis, multiplicity, charge , description)
+            print('Molecule has automatically generated name {}'.format(
+                molecule.name))
+            print('Information about this molecule would be saved at:\n{}\n'.format(
+                molecule.filename))
+            print('This molecule has {} atoms and {} electrons.'.format(
+                molecule.n_atoms, molecule.n_electrons))
+            for atom, atomic_number in zip(molecule.atoms, molecule.protons):
+                print('Contains {} atom, which has {} protons.'.format(
+                    atom, atomic_number))   
+            
+            #Now run a backend eletronic structure package to obtain the integrals
+            # and all the information and energies
+            h2_molecule = run_pyscf(molecule,
+                                    run_mp2 = True,
+                                    run_cisd = True,
+                                    run_ccsd = True,
+                                    run_fci = True)
+            h2_filename = h2_molecule.filename
+            h2_molecule.save()  
+            
+            print('\nAt bond length of {} angstrom, molecular hydrogen has:'.format(
+                bond_length))
+            print('Hartree-Fock energy of {} Hartree.'.format(molecule.hf_energy))
+            print('MP2 energy of {} Hartree.'.format(molecule.mp2_energy))
+            print('FCI energy of {} Hartree.'.format(molecule.fci_energy))
+            print('Nuclear repulsion energy between protons is {} Hartree.'.format(
+                molecule.nuclear_repulsion))
+            for orbital in range(molecule.n_orbitals):
+                print('Spatial orbital {} has energy of {} Hartree.'.format(
+                    orbital, molecule.orbital_energies[orbital]))
+            
+            
+            one_body_integrals = h2_molecule.one_body_integrals
+            two_body_integrals = h2_molecule.two_body_integrals
+            print('Integrals\nOnebody:\n', one_body_integrals)
+            print('\nTwo body:',two_body_integrals)
+            
+            
+            molecular_hamiltonian = molecule.get_molecular_hamiltonian()
+            #The hamiltonian is written in 2nd qntzation where (i,j) means acting on 
+            #site i with fermion operator j and j can be either 0 (destroy operator)
+            #or 1 (creation operator a^\dagger)
+            print('Hamiltonian:\n',molecular_hamiltonian)
+            
+            #Map operator to fermions and qubits.
+            fermion_hamiltonian = get_fermion_operator(molecular_hamiltonian)
+            qubit_hamiltonian = jordan_wigner(fermion_hamiltonian)
+            qubit_hamiltonian.compress() #only removes zero-entries
+            print('The Jordan-Wigner Hamiltonian in canonical basis follows:\n{}'.format(qubit_hamiltonian))
+
+            exit()
+            h=-0.098834850
             h_0=0.171201
             h_1=0.171201
-            h_2=0.2227965
-            h_3=0.2227965
+            h_2=-0.2227965
+            h_3=-0.2227965
             h_10=0.16862325
             h_20=0.12054625
             h_21=0.165868
             h_30=0.165868
             h_31=0.12054625
             h_32=0.17434925
-            h_xxyy=0.04532175
+            h_xxyy=-0.04532175
             h_xyyx=0.04532175
             h_yxxy=0.04532175
-            h_yyxx=0.04532175
+            h_yyxx=-0.04532175
             
             #one qubit hamiltonian
-            H_one = (-1)* h * self.Id \
-                        + h_0 * self.Z[0] \
-                        + h_1 * self.Z[1] \
-                        - h_2 * self.Z[2] \
-                        - h_3 * self.Z[3] 
+            H_one =   h * self.Id \
+                    + h_0 * self.Z[0] \
+                    + h_1 * self.Z[1] \
+                    + h_2 * self.Z[2] \
+                    + h_3 * self.Z[3] 
                         
             #two qubit hamiltonian
-            H_two = h_10 * self.Z[1] * self.Z[0] \
+            H_two =   h_10 * self.Z[1] * self.Z[0] \
                     + h_20 * self.Z[2] * self.Z[0] \
                     + h_21 * self.Z[2] * self.Z[1] \
                     + h_30 * self.Z[3] * self.Z[0] \
@@ -234,10 +303,10 @@ class qaoa_qutip(object):
                     + h_32 * self.Z[3] * self.Z[2] 
                     
             #four qubit hamiltonian    
-            H_four = (-1)* h_xxyy*self.X[3]*self.X[2]*self.Y[1]*self.Y[0] \
-                          + h_xyyx*self.X[3]*self.Y[2]*self.Y[1]*self.X[0] \
-                          + h_yxxy*self.Y[3]*self.X[2]*self.X[1]*self.Y[0] \
-                          - h_yyxx*self.Y[3]*self.Y[2]*self.X[1]*self.X[0] 
+            H_four =    h_xxyy*self.X[3]*self.X[2]*self.Y[1]*self.Y[0] \
+                      + h_xyyx*self.X[3]*self.Y[2]*self.Y[1]*self.X[0] \
+                      + h_yxxy*self.Y[3]*self.X[2]*self.X[1]*self.Y[0] \
+                      + h_yyxx*self.Y[3]*self.Y[2]*self.X[1]*self.X[0] 
             
             H_c = H_one + H_two + H_four
             
