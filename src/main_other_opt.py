@@ -207,18 +207,23 @@ init_point = np.random.uniform(param_range[0, 0], param_range[0,1], 2*depth)
 if optimizer_method == 'basinhopping':
     
     def callback_bh(x, fun, conv):
-        return callbackF(x)
+        callbackF(x)
+        
     results = basinhopping(qaoa_wrapper,
                            x0 = init_point,
                            callback = callback_bh,
+                           niter_success = 2,
                            )
+    print(results.message)
 elif optimizer_method == 'diff_evol':
     def callback_de(x, convergence):
-        return callbackF(x)
+        callbackF(x)
+        
     results = differential_evolution(qaoa_wrapper,
                                     bounds = bounds,
-                                    callback = callback_de
+                                    callback = callback_de,
                                     )
+    print(results.message)
 elif optimizer_method == 'shgo':
     op = {'maxiter':200*depth}
     results = shgo(qaoa_wrapper,
@@ -233,7 +238,7 @@ elif optimizer_method == 'dual_annealing':
     results = dual_annealing(qaoa_wrapper,
                             bounds = bounds,
                             callback = callback_da,
-                            maxfun = 200*depth,
+                            maxfun = 500*depth,
                            
                            )
 else:
@@ -243,7 +248,9 @@ else:
                        callback = callbackF,
                        bounds = bounds)
 
-info_file_name = folder + "/" + 'info.csv'
+info_file_name = folder + "/" + 'info.json'
+info_data = pd.DataFrame.from_dict(results)
+info_data.to_json(info_file_name)
 
 
 
