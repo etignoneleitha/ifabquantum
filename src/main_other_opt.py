@@ -221,7 +221,7 @@ elif optimizer_method == 'diff_evol':
         
     results = differential_evolution(qaoa_wrapper,
                                     bounds = bounds,
-                                    callback = callback_de,
+                                    callback = callback_de
                                     )
     print(results.message)
 elif optimizer_method == 'shgo':
@@ -238,7 +238,7 @@ elif optimizer_method == 'dual_annealing':
     results = dual_annealing(qaoa_wrapper,
                             bounds = bounds,
                             callback = callback_da,
-                            maxfun = 500*depth,
+                            maxfun = 200*depth,
                            
                            )
 else:
@@ -248,9 +248,6 @@ else:
                        callback = callbackF,
                        bounds = bounds)
 
-info_file_name = folder + "/" + 'info.json'
-info_data = pd.DataFrame.from_dict(results)
-info_data.to_json(info_file_name)
 
 
 
