@@ -4,6 +4,8 @@ from itertools import product
 import pandas as pd
 import random
 import numpy as np
+from pathlib import Path
+
 
 # QUANTUM
 #from qiskit import Aer, QuantumCircuit, execute
@@ -16,10 +18,20 @@ from utils.default_params import *
 
 from scipy.stats import qmc
 
+import openfermion
+from openfermion.chem import MolecularData
+from openfermion.transforms import get_fermion_operator, jordan_wigner, bravyi_kitaev
+from openfermionpyscf import run_pyscf
+
 
 class qaoa_qutip(object):
 
-    def __init__(self, G,  problem="MIS"):
+    def __init__(self, G, 
+                    shots = None, 
+                    problem="MIS", 
+                    bond_distance = 0.7414):
+        self.shots = shots
+        self.problem = problem
         self.G = G
         self.N = len(G)
         L =  self.N
@@ -58,7 +70,8 @@ class qaoa_qutip(object):
 
         H_c, gs_states, gs_en, deg, eigenstates, eigenvalues= self.hamiltonian_cost(
                                                                 problem=problem, 
-                                                                penalty=DEFAULT_PARAMS["penalty"]
+                                                                penalty=DEFAULT_PARAMS["penalty"],
+                                                                bond_distance =  bond_distance
                                                                 )
 
         self.H_c = H_c
@@ -144,7 +157,7 @@ class qaoa_qutip(object):
 
 
     def s2z(self, configuration):
-        return [1 - 2 * s for s in configuration]
+        return [1 - 2 * int(s) for s in configuration]
 
 
     def z2s(self, configuration):
@@ -166,7 +179,157 @@ class qaoa_qutip(object):
         return list_conf
 
 
-    def hamiltonian_cost(self, problem, penalty):
+    def create_qubit_hamiltonian_h2(self, bond_distance, transform = 'JW'):
+        '''
+        creates the qubit hamiltonian for the H2 problem with a given bond
+        distance and using JW transform (default) or BK (bravyi_kitaev)
+        and saves it as a .data file
+        '''
+        
+        bond_distance = bond_distance
+        geometry = [ [ 'H' , [ 0 , 0 , 0 ] ] ,
+                       [ 'H' , [ 0 , 0 , bond_distance] ] ]
+        basis= 'sto3g'
+        multiplicity = 1
+        charge = 0
+        description = str(bond_distance)
+        
+        #create a molecule object with only general information, still no
+        #one-body or two-body integral have been calculated (they would return
+        #None now)
+        molecule= MolecularData(geometry , basis, multiplicity, charge , description)
+        print('Molecule has automatically generated name {}'.format(
+            molecule.name))
+        print('Information about this molecule would be saved at:\n{}\n'.format(
+            molecule.filename))
+        print('This molecule has {} atoms and {} electrons.'.format(
+            molecule.n_atoms, molecule.n_electrons))
+        for atom, atomic_number in zip(molecule.atoms, molecule.protons):
+            print('Contains {} atom, which has {} protons.'.format(
+                atom, atomic_number))   
+        
+        #Now run a backend eletronic structure package to obtain the integrals
+        # and all the information and energies
+        h2_molecule = run_pyscf(molecule,
+                                run_mp2 = True,
+                                run_cisd = True,
+                                run_ccsd = True,
+                                run_fci = True)
+        h2_filename = h2_molecule.filename
+        h2_molecule.save()  
+        
+        print('\nAt bond length of {} angstrom, molecular hydrogen has:'.format(
+            bond_distance))
+        print('Hartree-Fock energy of {} Hartree.'.format(molecule.hf_energy))
+        print('MP2 energy of {} Hartree.'.format(molecule.mp2_energy))
+        print('FCI energy of {} Hartree.'.format(molecule.fci_energy))
+        print('Nuclear repulsion energy between protons is {} Hartree.'.format(
+            molecule.nuclear_repulsion))
+            
+       #  for orbital in range(molecule.n_orbitals):
+#             print('Spatial orbital {} has energy of {} Hartree.'.format(
+#                 orbital, molecule.orbital_energies[orbital]))
+        
+        
+        one_body_integrals = h2_molecule.one_body_integrals
+        two_body_integrals = h2_molecule.two_body_integrals
+        print('Integrals\nOnebody:\n', one_body_integrals)
+        print('\nTwo body:',two_body_integrals)
+        
+        
+        molecular_hamiltonian = molecule.get_molecular_hamiltonian()
+        
+        #The hamiltonian is written in 2nd qntzation where (i,j) means acting on 
+        #site i with fermion operator j and j can be either 0 (destroy operator)
+        #or 1 (creation operator a^\dagger)
+        print('Hamiltonian:\n',molecular_hamiltonian)
+        
+        
+        #Map operator to fermions and qubits.
+        fermion_hamiltonian = get_fermion_operator(molecular_hamiltonian)
+        
+        if transform == 'JW':
+            qubit_hamiltonian = jordan_wigner(fermion_hamiltonian)
+        
+        if transform == 'BK':
+            qubit_hamiltonian = bravyi_kitaev(fermion_hamiltonian)
+        qubit_hamiltonian.compress() #only removes zero-entries
+        
+        output_folder = str(Path(__file__).parents[2] / "output")
+                
+        openfermion.utils.save_operator(
+            qubit_hamiltonian,
+            file_name=f'H2_{transform}_hamiltonian_bound_distance_{bond_distance}',
+            data_directory=output_folder,
+            allow_overwrite=True,
+            plain_text=True
+        )
+        
+    def load_qubit_hamiltonian(self, bond_distance,  transform = 'BK'):
+        ''' 
+        Loads a jordan wigener transformed qubit hamiltonian created
+        with the method create_qubit_hamiltonian and extracts the terms
+        and the gates to be applied
+        '''
+        directory_name = str(Path(__file__).parents[2] / "output")
+        file_name = f'H2_{transform}_hamiltonian_bound_distance_{bond_distance}.data'
+        
+        with open(directory_name + '/' + file_name) as f:
+            a = f.read()
+        
+        #erase the useless parts
+        a = a.replace('[', '')
+        a = a.replace(']', '')
+        a = a.replace(' +', '')
+        
+        #splits into lines and erases the first one 
+        
+        split_into_lines = a.split('\n')[1:]
+        
+        ham = 0
+        
+        #run through each line extracting the terms
+        for new_line in split_into_lines:
+            splitted_line = new_line.split(' ')
+            
+            
+            #first element is the coefficient of the hamiltonian term
+            #second element is a list of pauli gates
+            coefficient = float(splitted_line[0])
+            operators_ = splitted_line[1:]
+            
+            hamiltonian_term = coefficient * self.Id
+            
+            #run through each pauli gate XO Y1 ... of this line and adds 
+            #it to the hamiltonian term
+            for operator_ in operators_:
+                
+                if operator_ == '':
+                    break
+                    
+                pauli_gate = operator_[0]
+                qubit = int(operator_[1])
+                
+                if pauli_gate == 'X':
+                    hamiltonian_term = hamiltonian_term * self.X[qubit]
+                
+                if pauli_gate == 'Y':
+                    hamiltonian_term *= self.Y[qubit]
+                
+                if pauli_gate == 'Z':
+                    hamiltonian_term *= self.Z[qubit]
+                    
+            ham += hamiltonian_term
+            
+        return ham
+                
+        
+        
+    def hamiltonian_cost(self, problem, penalty, bond_distance = 0.7414):
+        '''
+        receiving also bond length for the case of the H2 molecule
+        starndard value is the lowest energy
+        '''
     
         if problem == "MIS":
             H_0 = [-1*self.Z[i] / 2 for i in range(self.N)]
@@ -179,7 +342,7 @@ class qaoa_qutip(object):
             # in order to have a solution labeled by a string of 1s
             H_c = -sum(H_0) + penalty * sum(H_int)
 
-        elif problem == "MAX-CUT":
+        elif problem == "MAXCUT":
             H_int = [(self.Id - self.Z[i] * self.Z[j]) / 2 for i, j in  self.G.edges]
             H_c = -1 * sum(H_int)
         
@@ -193,175 +356,66 @@ class qaoa_qutip(object):
             H_c = -sum(H_0) + sum(H_int)
         
         elif problem == 'H2':
+            self.shots = None
             if self.N != 4:
                 print('WARNING\n you are running this with the incorrect'
                         f'number of nodes, shoule be 4 but you set {self.N}')
-            ''' Hamiltonian in the JW repr taken from eq(80) of Seeley
-                'The Bravyi-Kitaev transformation for quantum computation of
-                electronic structure'
-                Only the coefficient of h_0 is different to rescale the energy
-                to ~ -1.3'''
                 
-                
-            from openfermion.chem import MolecularData
-            from openfermion.transforms import get_fermion_operator, jordan_wigner
-            from openfermionpyscf import run_pyscf
+            self.create_qubit_hamiltonian_h2(bond_distance, transform = 'JW')
+            H_c = self.load_qubit_hamiltonian(bond_distance, transform = 'JW')
+        
             
             
-            bond_length = .7414
-            geometry = [ [ 'H' , [ 0 , 0 , 0 ] ] ,
-                           [ 'H' , [ 0 , 0 , bond_length] ] ]
-            basis= 'sto3g'
-            multiplicity = 1
-            charge = 0
-            description = str(bond_length)
-            
-            #create a molecule object with only general information, still no
-            #one-body or two-body integral have been calculated (they would return
-            #None now)
-            molecule= MolecularData(geometry , basis, multiplicity, charge , description)
-            print('Molecule has automatically generated name {}'.format(
-                molecule.name))
-            print('Information about this molecule would be saved at:\n{}\n'.format(
-                molecule.filename))
-            print('This molecule has {} atoms and {} electrons.'.format(
-                molecule.n_atoms, molecule.n_electrons))
-            for atom, atomic_number in zip(molecule.atoms, molecule.protons):
-                print('Contains {} atom, which has {} protons.'.format(
-                    atom, atomic_number))   
-            
-            #Now run a backend eletronic structure package to obtain the integrals
-            # and all the information and energies
-            h2_molecule = run_pyscf(molecule,
-                                    run_mp2 = True,
-                                    run_cisd = True,
-                                    run_ccsd = True,
-                                    run_fci = True)
-            h2_filename = h2_molecule.filename
-            h2_molecule.save()  
-            
-            print('\nAt bond length of {} angstrom, molecular hydrogen has:'.format(
-                bond_length))
-            print('Hartree-Fock energy of {} Hartree.'.format(molecule.hf_energy))
-            print('MP2 energy of {} Hartree.'.format(molecule.mp2_energy))
-            print('FCI energy of {} Hartree.'.format(molecule.fci_energy))
-            print('Nuclear repulsion energy between protons is {} Hartree.'.format(
-                molecule.nuclear_repulsion))
-            for orbital in range(molecule.n_orbitals):
-                print('Spatial orbital {} has energy of {} Hartree.'.format(
-                    orbital, molecule.orbital_energies[orbital]))
-            
-            
-            one_body_integrals = h2_molecule.one_body_integrals
-            two_body_integrals = h2_molecule.two_body_integrals
-            print('Integrals\nOnebody:\n', one_body_integrals)
-            print('\nTwo body:',two_body_integrals)
-            
-            
-            molecular_hamiltonian = molecule.get_molecular_hamiltonian()
-            #The hamiltonian is written in 2nd qntzation where (i,j) means acting on 
-            #site i with fermion operator j and j can be either 0 (destroy operator)
-            #or 1 (creation operator a^\dagger)
-            print('Hamiltonian:\n',molecular_hamiltonian)
-            
-            #Map operator to fermions and qubits.
-            fermion_hamiltonian = get_fermion_operator(molecular_hamiltonian)
-            qubit_hamiltonian = jordan_wigner(fermion_hamiltonian)
-            qubit_hamiltonian.compress() #only removes zero-entries
-            print('The Jordan-Wigner Hamiltonian in canonical basis follows:\n{}'.format(qubit_hamiltonian))
-
-            exit()
-            h=-0.098834850
-            h_0=0.171201
-            h_1=0.171201
-            h_2=-0.2227965
-            h_3=-0.2227965
-            h_10=0.16862325
-            h_20=0.12054625
-            h_21=0.165868
-            h_30=0.165868
-            h_31=0.12054625
-            h_32=0.17434925
-            h_xxyy=-0.04532175
-            h_xyyx=0.04532175
-            h_yxxy=0.04532175
-            h_yyxx=-0.04532175
-            
-            #one qubit hamiltonian
-            H_one =   h * self.Id \
-                    + h_0 * self.Z[0] \
-                    + h_1 * self.Z[1] \
-                    + h_2 * self.Z[2] \
-                    + h_3 * self.Z[3] 
-                        
-            #two qubit hamiltonian
-            H_two =   h_10 * self.Z[1] * self.Z[0] \
-                    + h_20 * self.Z[2] * self.Z[0] \
-                    + h_21 * self.Z[2] * self.Z[1] \
-                    + h_30 * self.Z[3] * self.Z[0] \
-                    + h_31 * self.Z[3] * self.Z[1] \
-                    + h_32 * self.Z[3] * self.Z[2] 
-                    
-            #four qubit hamiltonian    
-            H_four =    h_xxyy*self.X[3]*self.X[2]*self.Y[1]*self.Y[0] \
-                      + h_xyyx*self.X[3]*self.Y[2]*self.Y[1]*self.X[0] \
-                      + h_yxxy*self.Y[3]*self.X[2]*self.X[1]*self.Y[0] \
-                      + h_yyxx*self.Y[3]*self.Y[2]*self.X[1]*self.X[0] 
-            
-            H_c = H_one + H_two + H_four
-            
-            print(H_c.eigenstates(sort = 'low'))
-           # proj = 0.25*self.Id -0.25*self.Z[0]*self.Z[1] \
-                #-0.25*self.Z[2]*self.Z[3] + 0.25*self.Z[0]*self.Z[1]*self.Z[2]*self.Z[3]
-            proj = 0.25*self.Id -0.25*self.Z[0]*self.Z[2] \
-                -0.25*self.Z[1]*self.Z[3] + 0.25*self.Z[0]*self.Z[1]*self.Z[2]*self.Z[3]
-                
-            H_red = proj.conj() * H_c * proj
-            print(H_red)
-            H_red_shift = qu.Qobj(np.real(H_red[4:12,4:12]), dims = [[2,2, 2],[2,2,2]])
-            print(H_red_shift)
-            
-            #now have to redefine operators acting on a L-1 qubit space
-            dimQ = 2
-            L = 3
-            Id_3 = qu.tensor([qu.qeye(dimQ)] * L)
-
-            temp = [[qu.qeye(dimQ)] * j +
-                    [qu.sigmax()] +
-                    [qu.qeye(dimQ)] * (L - j - 1)
-                    for j in range(L)
-                    ]
-
-            X_3 = [qu.tensor(temp[j]) for j in range(L)]
-
-            temp = [[qu.qeye(dimQ)] * j +
-                    [qu.sigmay()] +
-                    [qu.qeye(dimQ)] * (L - j - 1)
-                    for j in range(L)
-                    ]
-            Y_3 = [qu.tensor(temp[j]) for j in range(L)]
-
-            temp = [[qu.qeye(dimQ)] * j +
-                    [qu.sigmaz()] +
-                    [qu.qeye(dimQ)] * (L - j - 1)
-                    for j in range(L)
-                    ]
-            Z_3 = [qu.tensor(temp[j]) for j in range(L)]
-            
-            
-            reorder = 0.5*(Id_3 + Z_3[0]*Z_3[2] \
-                         - Z_3[0]*X_3[1]*Z_3[2] + X_3[1])
-            print(reorder)
-            H_red_shift_reordered = reorder.conj() * H_red_shift * reorder
-            print(H_red_shift_reordered)
-            
-            H_red_shift_reordered_reshifted = qu.Qobj(np.real(H_red_shift_reordered[2:6, 2:6]),
-                                                        dims = [[2,2],[2,2]])
-            print(H_red_shift_reordered_reshifted)
-            
-            eig, eigsta = H_red_shift_reordered_reshifted.eigenstates(sort = 'low')
-            print(eig, eigsta)
-            exit()
+           # #proj = 0.25*self.Id -0.25*self.Z[0]*self.Z[1] \
+#                 #-0.25*self.Z[2]*self.Z[3] + 0.25*self.Z[0]*self.Z[1]*self.Z[2]*self.Z[3]
+#             proj = 0.25*self.Id -0.25*self.Z[0]*self.Z[2] \
+#                 -0.25*self.Z[1]*self.Z[3] + 0.25*self.Z[0]*self.Z[1]*self.Z[2]*self.Z[3]
+#                 
+#             H_red = proj.conj() * H_c * proj
+#             print(H_red)
+#             H_red_shift = qu.Qobj(np.real(H_red[4:12,4:12]), dims = [[2,2, 2],[2,2,2]])
+#             print(H_red_shift)
+#             
+#             #now have to redefine operators acting on a L-1 qubit space
+#             dimQ = 2
+#             L = 3
+#             Id_3 = qu.tensor([qu.qeye(dimQ)] * L)
+# 
+#             temp = [[qu.qeye(dimQ)] * j +
+#                     [qu.sigmax()] +
+#                     [qu.qeye(dimQ)] * (L - j - 1)
+#                     for j in range(L)
+#                     ]
+# 
+#             X_3 = [qu.tensor(temp[j]) for j in range(L)]
+# 
+#             temp = [[qu.qeye(dimQ)] * j +
+#                     [qu.sigmay()] +
+#                     [qu.qeye(dimQ)] * (L - j - 1)
+#                     for j in range(L)
+#                     ]
+#             Y_3 = [qu.tensor(temp[j]) for j in range(L)]
+# 
+#             temp = [[qu.qeye(dimQ)] * j +
+#                     [qu.sigmaz()] +
+#                     [qu.qeye(dimQ)] * (L - j - 1)
+#                     for j in range(L)
+#                     ]
+#             Z_3 = [qu.tensor(temp[j]) for j in range(L)]
+#             
+#             
+#             reorder = 0.5*(Id_3 + Z_3[0]*Z_3[2] \
+#                          - Z_3[0]*X_3[1]*Z_3[2] + X_3[1])
+#             print(reorder)
+#             H_red_shift_reordered = reorder.conj() * H_red_shift * reorder
+#             print(H_red_shift_reordered)
+#             
+#             H_red_shift_reordered_reshifted = qu.Qobj(np.real(H_red_shift_reordered[2:6, 2:6]),
+#                                                         dims = [[2,2],[2,2]])
+#             print(H_red_shift_reordered_reshifted)
+#             
+#             eig, eigsta = H_red_shift_reordered_reshifted.eigenstates(sort = 'low')
+#             print(eig, eigsta)
             
             
         elif problem == 'H2_reduced':
@@ -382,48 +436,6 @@ class qaoa_qutip(object):
                     
             H_c = H_one + H_two
             
-            
-        elif problem == 'H2_BK':
-        
-            h=-0.81261
-            h_0=0.171201
-            h_1=0.16862325
-            h_2=-0.2227965
-            h_10=0.171201
-            h_20=0.12054625
-            h_31=0.17434925
-            h_xzx = 0.04532175
-            h_yzy = 0.04532175
-            h_210 = 0.165868
-            h_320 = 0.12054625
-            h_321 = -0.2227965
-            h_zxzx = 0.04532175
-            h_zyzy = 0.04532175
-            h_3210 = 0.165868
-            
-            #one qubit hamiltonian
-            H_one =   h * self.Id \
-                    + h_0 * self.Z[0] \
-                    + h_1 * self.Z[1] \
-                    + h_2 * self.Z[2] 
-                        
-            #two qubit hamiltonian
-            H_two = h_10 * self.Z[1] * self.Z[0] \
-                    + h_20 * self.Z[2] * self.Z[0] \
-                    + h_31 * self.Z[3] * self.Z[1] 
-                
-            H_three =    h_xzx*self.X[2]*self.Z[1]*self.X[0] \
-                      +  h_xzx*self.Y[2]*self.Z[1]*self.Y[0] \
-                      +  h_210*self.Z[2]*self.Z[1]*self.Z[0] \
-                      +  h_320*self.Z[3]*self.Z[2]*self.Z[0] \
-                      +  h_321*self.Z[3]*self.Z[2]*self.Z[1] 
-                         
-            #four qubit hamiltonian    
-            H_four =    h_zxzx*self.Z[3]*self.X[2]*self.Z[1]*self.X[0] \
-                      + h_zyzy*self.Z[3]*self.Y[2]*self.Z[1]*self.Y[0] \
-                      + h_3210*self.Z[3]*self.Z[2]*self.Z[1]*self.Z[0]
-            
-            H_c = H_one + H_two + H_three + H_four
             
         elif problem == 'H2_BK_reduced':
         
@@ -460,7 +472,7 @@ class qaoa_qutip(object):
             
         
         else:
-            print("problem sohuld be one of the following: MIS, MAX-CUT")
+            print("problem sohuld be one of the following: MIS, MAXCUT")
             exit(-1)
             
         energies, eigenstates = H_c.eigenstates(sort = 'low')
@@ -481,7 +493,23 @@ class qaoa_qutip(object):
             
         return H_c, gs_states, gs_en, deg, eigenstates, energies
 
-
+    def classical_cost(self, bitstring):
+    
+        spin_string = self.s2z(bitstring)
+        cost = 0
+        if self.problem == 'MAXCUT':
+            
+            for edge in self.G.edges:
+                cost += spin_string[edge[0]]*spin_string[edge[1]]
+        
+        if self.problem == 'MIS':
+            
+            cost += sum(spin_string)
+            for edge in self.G.edges:
+                cost += spin_string[edge[0]]*spin_string[edge[1]]
+                
+        return cost
+        
     def evaluate_cost(self, configuration):
         '''
         configuration: strings of 0,1. The solution (minimum of H_c) is labelled by 1
@@ -507,24 +535,50 @@ class qaoa_qutip(object):
 
         for p in range(depth):
             state_0 = self.U_mix(betas[p]) * self.U_c(gammas[p]) * state_0
+        
+        if self.shots is None:
+            mean_energy = qu.expect(self.H_c, state_0)
 
-        mean_energy = qu.expect(self.H_c, state_0)
+            variance = qu.expect(self.H_c * self.H_c, state_0) - mean_energy**2
 
-        variance = qu.expect(self.H_c * self.H_c, state_0) - mean_energy**2
+            fidelities= []
+            for gs_state in self.gs_states:
+                fidelities.append(np.abs(state_0.overlap(gs_state))**2)
 
-        fidelities= []
-        for gs_state in self.gs_states:
-            fidelities.append(np.abs(state_0.overlap(gs_state))**2)
+            fidelity_tot = np.sum(fidelities)
+            
+            if obj_func == "energy":
+                return state_0, mean_energy, variance, fidelity_tot
 
-        fidelity_tot = np.sum(fidelities)
+            elif obj_func == "gibbs":
+                gibbs_op = self.gibbs_obj_func(eta=2)
+                mean_gibbs = -np.log(qu.expect(gibbs_op, state_0))
+                return state_0, mean_gibbs, variance, fidelity_tot
+            
+        else:
+            prob_each_state = np.squeeze(np.abs(state_0.full())**2).tolist()
+            
+            samples = np.random.choice(2**self.N, 
+                                               size = self.shots,
+                                               replace = True,
+                                               p = prob_each_state
+                                               )
+            s = np.array([2,3])
+            sampled_strings = np.vectorize(np.binary_repr)(samples, self.N)
+            
+            mean_energy = sum([self.classical_cost(s) for s in sampled_strings])/self.shots
+            variance = sum([(self.classical_cost(s) - mean_energy)**2 for s in sampled_strings])/self.shots
+            
+            fidelities= []
+            for gs_state in self.gs_binary:
+                fidelities.append(sampled_strings.tolist().count(gs_state))
 
-        if obj_func == "energy":
+            fidelity_tot = np.sum(fidelities)/self.shots
+            
             return state_0, mean_energy, variance, fidelity_tot
+            
 
-        elif obj_func == "gibbs":
-            gibbs_op = self.gibbs_obj_func(eta=2)
-            mean_gibbs = -np.log(qu.expect(gibbs_op, state_0))
-            return state_0, mean_gibbs, variance, fidelity_tot
+        
 
     def generate_random_points(self,
                                N_points,

@@ -69,12 +69,23 @@ def parse_command_line():
                         type=str,
                         default="MIS",
                         help=("Type of problem to solve"
-                                "Choose between MIS, MAX-CUT, ISING, H2, H2_reduced")
+                                "Choose between MIS, MAXCUT, ISING, H2, H2_reduced")
                         )
     parser.add_argument('--optimizer',
                         type=str,
                         default="COBYLA",
                         help=("Type of optimizer: COBYLA, L-BFGS-B, Nelder-Mead, SLSQP")
                         )
-
+    parser.add_argument('--shots',
+                        type=int,
+                        default=None,
+                        help=("Number of shots, defaults is None so it will run with exact energy")
+                        )
+                        
+    parser.add_argument('--how_many_bonds',
+                        type=int,
+                        default=None,
+                        help=("Number of points at which evaluate the energy of the H2 molecule")
+                        )
+                        
     return parser.parse_args()

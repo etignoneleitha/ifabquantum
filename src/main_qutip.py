@@ -36,7 +36,8 @@ nwarmup = args.nwarmup
 average_connectivity = args.average_connectivity
 problem = args.problem
 nbayes = args.nbayes
-kernel_optimizer = 'fmin_l_bfgs_b'
+shots = args.shots
+kernel_optimizer = 'fmin_l_bfgs_b' #fmin_l_bfgs_b'#'differential_evolution' #fmin_l_bfgs_b'
 diff_evol_func = None
 method = 'DIFF-EVOL'
 param_range = np.array([[0.01, np.pi], [0.01, np.pi]])   # extremes where to search for the values of gamma and beta
@@ -57,8 +58,10 @@ elif problem == 'H2_reduced' or problem == 'H2_BK_reduced':
     G = create_chain(2)
 else:
     G = create_random_regular_graph(num_nodes, degree=3, seed=1)
-    
-qaoa = qaoa_qutip(G, problem=problem)
+
+
+qaoa = qaoa_qutip(G, shots, problem=problem)
+
 gs_energy, gs_state, degeneracy = qaoa.gs_en, qaoa.gs_states, qaoa.deg
 
 print('Information on the hamiltonian')
@@ -130,7 +133,10 @@ def angle_names_string():
     return angle_names
         
 output_folder = Path(__file__).parents[1] / "output"
-file_name = f'lfgbs_p_{depth}_warmup_{nwarmup}_train_{nbayes}_num_nodes_{num_nodes}.dat'
+if shots is None:
+    file_name = f'lfgbs_p_{depth}_warmup_{nwarmup}_train_{nbayes}_num_nodes_{num_nodes}.dat'
+else:
+    file_name = f'lfgbs_p_{depth}_warmup_{nwarmup}_train_{nbayes}_num_nodes_{num_nodes}_shots_{shots}.dat'
 data_ = []
 angle_names = angle_names_string()
 results_data_names = ['iter '] + angle_names +\
@@ -197,6 +203,7 @@ print('Training ...')
 log_likelihood_grids = []
 kernel_opts = []
 kernel_matrices = []
+acq_funcs = []
 
 for i in range(nbayes):
     
@@ -212,14 +219,17 @@ for i in range(nbayes):
     y_next_point = mean_energy
     fidelity = fidelity_tot
     approx_ratio = mean_energy/qaoa.gs_en
-    #gp.get_acquisition_function(show = False, save = True)
-    # log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid()
-#     log_likelihood_grids.append(log_marginal_likelihood_grid)
-#     k_matrix, _ = gp.get_covariance_matrix()
-#     kernel_matrices.append(k_matrix)
-#     
-#     kernel_opts.append(gp.samples)
-#         
+    if depth <2:
+        acq_func = gp.get_acquisition_function(show = False, save = True)
+        acq_funcs.append(acq_func)
+    #log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid(show = False, save = True)
+    
+    #log_likelihood_grids.append(log_marginal_likelihood_grid)
+    k_matrix, _ = gp.get_covariance_matrix()
+    kernel_matrices.append(k_matrix)
+    
+    kernel_opts.append(gp.samples)
+        
         
     #### FIT NEW POINT #####
     gp.fit(next_point, y_next_point)
@@ -267,12 +277,13 @@ for i in range(nbayes):
     df = pd.DataFrame(data = data_, columns = results_data_names)
     df.to_csv(folder + "/" + file_name , columns = results_data_names, header = data_header)
     
-   #  if diff_evol_func == None:
-#         np.save(folder +"/"+ "kernel_opt".format(i), np.array(kernel_opts, dtype = object))
-#     else:
-#         np.save(folder +"/"+ "opt".format(i), np.array(kernel_opts, dtype = object))
-#     np.save(folder +"/"+ "log_marg_likelihoods".format(i), np.array(log_likelihood_grids,  dtype = object))
-#     np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
+    if diff_evol_func == None:
+        np.save(folder +"/"+ "kernel_opt".format(i), np.array(kernel_opts, dtype = object))
+    else:
+        np.save(folder +"/"+ "opt".format(i), np.array(kernel_opts, dtype = object))
+    np.save(folder +"/"+ "log_marg_likelihoods".format(i), np.array(log_likelihood_grids,  dtype = object))
+    np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
+    np.save(folder +"/"+ "acq_funcs".format(i), np.array(acq_funcs, dtype = object))
 
 
 

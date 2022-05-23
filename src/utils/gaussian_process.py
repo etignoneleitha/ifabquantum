@@ -570,16 +570,17 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         
         x = np.array(x)
         
-        if show:
+        if show or save:
             im = plt.imshow(x,  extent = [min_x, max_x, min_y, max_y], origin = 'lower', aspect = 'auto')
             plt.xlabel('constant')
             plt.ylabel('corr length')
+            plt.scatter(np.array(self.samples)[:,1], np.array(self.samples)[:,2])
             plt.colorbar(im)
             max = np.max(x)
             plt.clim(max-20, max*1.05)
             plt.title('log_marg_likelihood iter:{} kernel_{}'.format(len(self.X), self.kernel_))
         if save:
-            plt.savefig('data/marg_likelihood_iter={}_kernel={}.png'.format(len(self.X), self.kernel_))
+            plt.savefig('output/marg_likelihood_iter={}_kernel={}.png'.format(len(self.X), self.kernel_))
         if show:
             plt.show()
         
