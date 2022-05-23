@@ -16,6 +16,7 @@ from pathlib import Path
 import os
 import pandas as pd
 import networkx as nx
+import math
 from sklearn.metrics.pairwise import euclidean_distances
 
 np.set_printoptions(precision=4, suppress=True)
@@ -119,7 +120,10 @@ def angle_names_string():
     
 
 output_folder = Path(__file__).parents[1] / "output"
-file_name = f'H2_p_{depth}_warmup_{nwarmup}_train_{nbayes}_distance_{bond_distance}.dat'
+frac_part, whole_part = math.modf(bond_distance)
+frac_part = str(round(frac_part, 4))[2:]
+whole_part = int(whole_part)
+file_name = f'H2_p_{depth}_warmup_{nwarmup}_train_{nbayes}_distance_{whole_part}_{frac_part}.dat'
 data_ = []
 angle_names = angle_names_string()
 results_data_names = ['iter '] + angle_names +\
