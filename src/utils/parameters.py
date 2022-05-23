@@ -82,10 +82,10 @@ def parse_command_line():
                         help=("Number of shots, defaults is None so it will run with exact energy")
                         )
                         
-    parser.add_argument('--how_many_bonds',
-                        type=int,
-                        default=None,
-                        help=("Number of points at which evaluate the energy of the H2 molecule")
+    parser.add_argument('--bond_distance',
+                        type=float,
+                        default=0.7414,
+                        help=("bond distance of the H2 molecule")
                         )
                         
     return parser.parse_args()
