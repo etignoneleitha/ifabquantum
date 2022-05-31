@@ -493,20 +493,22 @@ class qaoa_qutip(object):
             
         return H_c, gs_states, gs_en, deg, eigenstates, energies
 
-    def classical_cost(self, bitstring):
+    def classical_cost(self, bitstring, penalty=DEFAULT_PARAMS["penalty"]):
     
+              
+                
         spin_string = self.s2z(bitstring)
         cost = 0
         if self.problem == 'MAXCUT':
             
             for edge in self.G.edges:
-                cost += spin_string[edge[0]]*spin_string[edge[1]]
+                cost -= (1 - spin_string[edge[0]]*spin_string[edge[1]])/2
         
         if self.problem == 'MIS':
-            
-            cost += sum(spin_string)
+            cost += sum(spin_string)/2
             for edge in self.G.edges:
-                cost += spin_string[edge[0]]*spin_string[edge[1]]
+                cost += penalty * (spin_string[edge[0]]*spin_string[edge[1]]
+                            -spin_string[edge[0]] - spin_string[edge[1]])/4
                 
         return cost
         
@@ -577,8 +579,6 @@ class qaoa_qutip(object):
             
             return state_0, mean_energy, variance, fidelity_tot
             
-
-        
 
     def generate_random_points(self,
                                N_points,
