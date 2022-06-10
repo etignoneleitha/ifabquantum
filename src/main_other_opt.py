@@ -19,7 +19,11 @@ import networkx as nx
 from scipy.optimize import minimize, basinhopping, differential_evolution, shgo, dual_annealing
 np.set_printoptions(precision=4, suppress=True)
 
+'''
 
+Runs through three different global optimizers
+
+'''
     
 ################### PARAMETERS   ################
 
@@ -204,49 +208,50 @@ init_point = np.random.uniform(param_range[0, 0], param_range[0,1], 2*depth)
 # 
 # mybounds = MyBounds()
 
-if optimizer_method == 'basinhopping':
+for optimizer_method in ['basinhopping','diff_evol','dual_annealing']:
+    if optimizer_method == 'basinhopping':
     
-    def callback_bh(x, fun, conv):
-        callbackF(x)
+        def callback_bh(x, fun, conv):
+            callbackF(x)
         
-    results = basinhopping(qaoa_wrapper,
-                           x0 = init_point,
-                           callback = callback_bh,
-                           niter_success = 2,
-                           )
-    print(results.message)
-elif optimizer_method == 'diff_evol':
-    def callback_de(x, convergence):
-        callbackF(x)
+        results = basinhopping(qaoa_wrapper,
+                               x0 = init_point,
+                               callback = callback_bh,
+                               niter_success = 2,
+                               )
+        print(results.message)
+    elif optimizer_method == 'diff_evol':
+        def callback_de(x, convergence):
+            callbackF(x)
         
-    results = differential_evolution(qaoa_wrapper,
-                                    bounds = bounds,
-                                    callback = callback_de
-                                    )
-    print(results.message)
-elif optimizer_method == 'shgo':
-    op = {'maxiter':200*depth}
-    results = shgo(qaoa_wrapper,
-                    bounds = bounds,
-                    callback = callbackF,
-                    options = op
-                           )
-elif optimizer_method == 'dual_annealing':
-    def callback_da(x, e, context):
-        callbackF(x)
+        results = differential_evolution(qaoa_wrapper,
+                                        bounds = bounds,
+                                        callback = callback_de
+                                        )
+        print(results.message)
+    elif optimizer_method == 'shgo':
+        op = {'maxiter':200*depth}
+        results = shgo(qaoa_wrapper,
+                        bounds = bounds,
+                        callback = callbackF,
+                        options = op
+                               )
+    elif optimizer_method == 'dual_annealing':
+        def callback_da(x, e, context):
+            callbackF(x)
         
-    results = dual_annealing(qaoa_wrapper,
-                            bounds = bounds,
-                            callback = callback_da,
-                            maxfun = 200*depth,
+        results = dual_annealing(qaoa_wrapper,
+                                bounds = bounds,
+                                callback = callback_da,
+                                maxfun = 200*depth,
                            
-                           )
-else:
-    results = minimize(qaoa_wrapper, 
-                       x0 = init_point,
-                       method = optimizer_method,
-                       callback = callbackF,
-                       bounds = bounds)
+                               )
+    else:
+        results = minimize(qaoa_wrapper, 
+                           x0 = init_point,
+                           method = optimizer_method,
+                           callback = callbackF,
+                           bounds = bounds)
 
 
 
