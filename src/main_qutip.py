@@ -37,6 +37,7 @@ average_connectivity = args.average_connectivity
 problem = args.problem
 nbayes = args.nbayes
 shots = args.shots
+gate_noise = args.gate_noise
 kernel_optimizer = 'fmin_l_bfgs_b' #fmin_l_bfgs_b'#'differential_evolution' #fmin_l_bfgs_b'
 diff_evol_func = None
 method = 'DIFF-EVOL'
@@ -59,7 +60,11 @@ elif problem == 'H2_reduced' or problem == 'H2_BK_reduced':
 else:
     G = create_random_regular_graph(num_nodes, degree=3, seed=1)
 
-qaoa = qaoa_qutip(G, shots, problem=problem)
+
+qaoa = qaoa_qutip(G, 
+                  shots = shots, 
+                  gate_noise = gate_noise,
+                  problem = problem)
 
 
 
@@ -80,12 +85,7 @@ print('GS degeneracy: ', degeneracy)
 print('GS :', qaoa.gs_states[0])
 print('ham :, ', qaoa.H_c)
 
-params = [0.7370290879757566,2.189271067585821,
-            2.941393588929039,0.5618259294552729,
-            1.2950906144722916,1.636061477435682,
-            1.7690360289109675,1.1753091182207696,
-            1.690478127076012,1.3682484526236907]
-res = qaoa.quantum_algorithm(params)
+
 DEFAULT_PARAMS["seed"] = seed + i_trial
 
 ########### CREATE GP AND FIT TRAINING DATA  #####################
@@ -102,7 +102,7 @@ mat_kern = Matern(
                   )
 kernel = const_kern * mat_kern 
 
-if shots is not None:
+if shots is not None or gate_noise is not None:
     kernel += WhiteKernel(noise_level=0.5)
 
 gp = MyGaussianProcessRegressor(kernel=kernel,
@@ -152,10 +152,13 @@ def angle_names_string():
     return angle_names
         
 output_folder = Path(__file__).parents[1] / "output"
-if shots is None:
-    file_name = f'Bayes_{problem}_p_{depth}_num_nodes_{num_nodes}_train_{nbayes}_seed_{seed}.dat'
-else:
-    file_name = f'Bayes_{problem}_p_{depth}_num_nodes_{num_nodes}_train_{nbayes}_seed_{seed}_shots_{shots}.dat'
+file_name = f'Bayes_{problem}_p_{depth}_num_nodes_{num_nodes}_train_{nbayes}_seed_{seed}'
+if shots is not None:
+    file_name += f'_shots_{shots}'
+if gate_noise is not None:
+    file_name += f'_noise_{gate_noise}'
+
+file_name += '.dat'
 data_ = []
 angle_names = angle_names_string()
 results_data_names = ['iter '] + angle_names +\

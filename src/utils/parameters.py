@@ -88,4 +88,10 @@ def parse_command_line():
                         help=("bond distance of the H2 molecule")
                         )
                         
+    parser.add_argument('--gate_noise',
+                        type=float,
+                        default=None,
+                        help=("Noise std to apply to every gate")
+                        )
+                        
     return parser.parse_args()

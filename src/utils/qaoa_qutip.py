@@ -29,8 +29,10 @@ class qaoa_qutip(object):
     def __init__(self, G, 
                     shots = None, 
                     problem="MIS", 
+                    gate_noise = None,
                     bond_distance = 0.7414):
         self.shots = shots
+        self.gate_noise = gate_noise
         self.problem = problem
         self.G = G
         self.N = len(G)
@@ -133,14 +135,72 @@ class qaoa_qutip(object):
 # 
 #         return U
 
+   #  def U_c(self, gamma):
+#         # evolution operator of U_c
+#         evol_op = []
+#         for energy, eigen_state in zip(self.energies, self.eigenstates):
+#             evol_op.append(np.exp(-1j * energy * gamma) * eigen_state * eigen_state.dag())
+#             
+#         U = sum(evol_op)
+# 
+#         return U
+
     def U_c(self, gamma):
         # evolution operator of U_c
+        if self.gate_noise == None:
+            eigen_energies,eigen_states = np.linalg.eig(self.H_c)
+        else:
+            self.H_simulation = self.noisy_hamiltonian(self.gate_noise)
+            eigen_energies, eigen_states = np.linalg.eig(self.H_simulation)
+            
         evol_op = []
-        for energy, eigen_state in zip(self.energies, self.eigenstates):
-            evol_op.append(np.exp(-1j * energy * gamma) * eigen_state * eigen_state.dag())
-        U = sum(evol_op)
+       #  for j_state, el in enumerate(eigen_energies):
+#             bin_state = np.binary_repr(j_state, self.N)
+#             eigen_state =  qu.tensor([qu.basis(2, int(e_state)) for e_state in bin_state])
+#             evol_op.append(np.exp(-1j * el * gamma) * eigen_state * eigen_state.dag())
+#         
+        for e_en, e_state in zip(eigen_energies, eigen_states):
+            state_ = qu.Qobj(e_state, dims = [[2]*self.N] +[ [1]*self.N])
+            proj = state_.proj()
+            evol_op.append(np.exp(-1j * e_en * gamma) * proj)
+        
+        U= sum(evol_op)
 
         return U
+
+    def noisy_hamiltonian(self, gate_noise):
+        if self.problem == "MIS":
+            H_0 = [-1*self.Z[i] / 2 for i in range(self.N)]
+            H_int = [
+                (self.Z[i] * self.Z[j] - self.Z[i] - self.Z[j]) / 4 
+                for i, j in  self.G.edges
+                ]
+                
+            penalty_noise_link = np.random.normal(DEFAULT_PARAMS["penalty"], 
+                                            gate_noise, 
+                                            len(self.G.edges))
+                                            
+            qubit_noise = np.random.normal(1, 
+                                            gate_noise, 
+                                            self.N)
+            H_int_noise = [
+                penalty_noise_link[k]*(self.Z[i] * self.Z[j] - self.Z[i] - self.Z[j]) / 4 
+                for k, [i, j] in  enumerate(self.G.edges)
+                ]
+                
+            H_0_noise = [-1*qubit_noise[i]*self.Z[i] / 2 for i in range(self.N)]
+                
+            H_simulation = -sum(H_0_noise) + sum(H_int_noise)
+            
+        if self.problem == "MAX-CUT":
+            link_noise = np.random.normal(1, 
+                                          gate_noise, 
+                                          len(self.G.edges))
+            H_int = [link_noise[k]*(self.Id - self.Z[i] * self.Z[j]) / 2 for k, (i,j) in  enumerate(self.G.edges)]
+            H_c = -1 * sum(H_int)
+            
+        
+        return H_simulation
 
 
     def gibbs_obj_func(self, eta):
@@ -330,7 +390,7 @@ class qaoa_qutip(object):
         receiving also bond length for the case of the H2 molecule
         starndard value is the lowest energy
         '''
-    
+        
         if problem == "MIS":
             H_0 = [-1*self.Z[i] / 2 for i in range(self.N)]
             H_int = [
@@ -605,7 +665,7 @@ class qaoa_qutip(object):
                 try:
                     fidelities.append(results_sorted[gs_state])
                 except:
-                    #print('This gs state was not sampled')
+                    fidelities.append(results_sorted[gs_state])
                 
 
             fidelity_tot = np.sum(fidelities)/self.shots
