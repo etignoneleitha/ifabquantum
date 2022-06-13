@@ -477,7 +477,6 @@ class qaoa_qutip(object):
             
         energies, eigenstates = H_c.eigenstates(sort = 'low')
         degeneracy = next((i for i, x in enumerate(np.diff(energies)) if x), 1) + 1
-        deg = (degeneracy > 1)
         gs_en = energies[0]
         
         # matrix = np.column_stack([eigenstates[i].full() for i in range(len(eigenstates))])
@@ -491,7 +490,7 @@ class qaoa_qutip(object):
 #         exit()
         gs_states = [state_gs for state_gs in eigenstates[:degeneracy]]
             
-        return H_c, gs_states, gs_en, deg, eigenstates, energies
+        return H_c, gs_states, gs_en, degeneracy, eigenstates, energies
 
     def classical_cost(self, bitstring, penalty=DEFAULT_PARAMS["penalty"]):
     
@@ -549,6 +548,7 @@ class qaoa_qutip(object):
 
             fidelity_tot = np.sum(fidelities)
             
+           
             if obj_func == "energy":
                 return state_0, mean_energy, variance, fidelity_tot
 
@@ -558,26 +558,59 @@ class qaoa_qutip(object):
                 return state_0, mean_gibbs, variance, fidelity_tot
             
         else:
-            prob_each_state = np.squeeze(np.abs(state_0.full())**2).tolist()
+            prob_each_state = np.array([np.real(x.conj() * x) for x in state_0.full()]).squeeze()
             
             samples = np.random.choice(2**self.N, 
                                                size = self.shots,
                                                replace = True,
                                                p = prob_each_state
                                                )
-            s = np.array([2,3])
-            sampled_strings = np.vectorize(np.binary_repr)(samples, self.N)
+            samples_as_bitstrings = np.vectorize(np.binary_repr)(samples, self.N)
+            results = {}
+            results_counts = np.unique(samples_as_bitstrings, return_counts = True)
+            results = dict(zip(results_counts[0], results_counts[1]))
+            results_sorted = dict(sorted(results.items(), key=lambda item: item[1], reverse = True))
+            #print(results_sorted)
             
-            mean_energy = sum([self.classical_cost(s) for s in sampled_strings])/self.shots
-            variance = sum([(self.classical_cost(s) - mean_energy)**2 for s in sampled_strings])/self.shots
+            # 
+#             sol_ratio = 0
+#             if len(results_sorted)>1 :
+#                 for i in range(len(results_sorted)):
+#                     first_key, second_key =  list(results_sorted.keys())[i:i+2]
+#                     
+#                     if (first_key in self.gs_binary):
+#                         if (second_key in self.gs_binary):
+#                             continue
+#                         elif(results_sorted[second_key] > 0):
+#                             sol_ratio = results_sorted[first_key]/results_sorted[second_key]
+#                         else:
+#                             sol_ratio = self.shots
+#             else:
+#                 first_key =  list(result_sorted.keys())[0]
+#                 if (first_key in self.gs_binary):
+#                     sol_ratio = self.shots    #if the only sampled value is the solution the ratio is infinte so we put the # of shots
+#             
+#             return sol_ratio
+                
+            key_sorted = list(results_sorted.keys())
+            mean_energy = sum([self.classical_cost(s)*results_sorted[s] for s in results_sorted.keys()])/self.shots
+            #variance = sum([
+            #    ((self.classical_cost(s) - mean_energy)*list(results_sorted.values())[s])**2 
+            #                    for s in key_sorted])/self.shots
+            variance = 0
+            
             
             fidelities= []
             for gs_state in self.gs_binary:
-                fidelities.append(sampled_strings.tolist().count(gs_state))
+                try:
+                    fidelities.append(results_sorted[gs_state])
+                except:
+                    #print('This gs state was not sampled')
+                
 
             fidelity_tot = np.sum(fidelities)/self.shots
             
-            return state_0, mean_energy, variance, fidelity_tot
+            return state_0, mean_energy, variance, fidelity_tot, 
             
 
     def generate_random_points(self,
@@ -611,17 +644,56 @@ class qaoa_qutip(object):
 
         return X, Y
         
-    def get_landscape(self, angle_bounds):
+    def get_landscape(self, angle_bounds, num):
     
         fig = plt.figure()
-        num = 20
-        x = np.zeros((num, num))
+        energies = np.zeros((num, num))
+        fidelities = np.zeros((num, num))
+        variances = np.zeros((num, num))
         gammas = np.linspace(angle_bounds[0, 0],angle_bounds[0,1], num)
         betas = np.linspace(angle_bounds[1, 0],angle_bounds[1,1], num)
         for i, gamma in enumerate(gammas):
             for j, beta in enumerate(betas):
-                a, en, b, c = self.quantum_algorithm([gamma, beta])
-                x[j, i] = en
+                a, en, var, fid = self.quantum_algorithm([gamma, beta])
+                energies[j, i] = en
+                fidelities[j, i] = fid
+                variances[j, i] = var
         
-        return x
+        return energies, fidelities, variances
+        
+    def classical_solution(self, save = False):
+        '''
+        Runs through all 2^n possible configurations and estimates the solution
+        Returns: 
+            d: dictionary with {[bitstring solution] : energy}
+            en: energy of the (possibly degenerate) solution
+        '''
+        results = {}
+
+        string_configurations = list(product(['0','1'], repeat=len(self.G)))
+
+        for string_configuration in  string_configurations:
+            print(string_configuration)
+            single_string = "".join(string_configuration)
+            results[single_string] = self.classical_cost(string_configuration)
+        
+        d = dict((k, v) for k, v in results.items() if v == np.min(list(results.values())))
+        en = list(d.values())[0]
+        
+        #sort the dictionary
+        results = dict(sorted(results.items(), key=lambda item: item[1]))
+        
+        #counts the distribution of energies
+        energies, counts = np.unique(list(results.values()), return_counts = True)
+        df = pd.DataFrame(np.column_stack((energies, counts)), columns = ['energy', 'counts'])
+        print('\n####CLASSICAL SOLUTION######\n')
+        print('Lowest energy:', d)
+        print('First excited states:', {k: results[k] for k in list(results)[1:5]})
+        print('Energy distribution')
+        print(df)
+        if save:
+            df.to_csv('output/energy_statistics.dat')
+        
+        
+        return d, en
         
