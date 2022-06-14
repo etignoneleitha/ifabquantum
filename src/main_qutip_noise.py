@@ -16,6 +16,7 @@ from pathlib import Path
 import os
 import pandas as pd
 import networkx as nx
+import math
 from sklearn.metrics.pairwise import euclidean_distances
 
 np.set_printoptions(precision=4, suppress=True)
@@ -154,11 +155,14 @@ for depth in [1,2,3,4,5]:
             return angle_names
         
         output_folder = Path(__file__).parents[1] / "output"
+        frac_part, whole_part = math.modf(bond_distance)
+        frac_part = str(round(frac_part, 4))[2:]
+        whole_part = int(whole_part)
         file_name = f'Bayes_{problem}_p_{depth}_num_nodes_{num_nodes}_train_{nbayes}_seed_{seed}'
         if shots is not None:
             file_name += f'_shots_{shots}'
         if gate_noise is not None:
-            file_name += f'_noise_{gate_noise}'
+            file_name += f'_noise_{whole_part}_{frac_part}'
 
         file_name += '.dat'
         data_ = []
@@ -306,7 +310,7 @@ for depth in [1,2,3,4,5]:
             else:
                 np.save(folder +"/"+ "opt".format(i), np.array(kernel_opts, dtype = object))
             np.save(folder +"/"+ "log_marg_likelihoods".format(i), np.array(log_likelihood_grids,  dtype = object))
-            np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
+            #np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
             np.save(folder +"/"+ "acq_funcs".format(i), np.array(acq_funcs, dtype = object))
 
 
