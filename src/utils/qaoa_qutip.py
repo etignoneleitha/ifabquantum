@@ -666,13 +666,16 @@ class qaoa_qutip(object):
             
             
             fidelities= []
+            
             for gs_state in self.gs_binary:
-                try:
-                    fidelities.append(results_sorted[gs_state])
-                except:
-                    fidelities.append(results_sorted[gs_state])
+            
+                if gs_state in results_sorted.keys():
                 
-
+                    fidelities.append(results_sorted[gs_state])
+                    
+                else:
+                    continue
+                
             fidelity_tot = np.sum(fidelities)/self.shots
             
             return state_0, mean_energy, variance, fidelity_tot, 
