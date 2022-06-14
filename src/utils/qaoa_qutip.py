@@ -169,6 +169,9 @@ class qaoa_qutip(object):
         return U
 
     def noisy_hamiltonian(self, gate_noise):
+    
+        H_simulation  = 0
+        
         if self.problem == "MIS":
             H_0 = [-1*self.Z[i] / 2 for i in range(self.N)]
             H_int = [
@@ -192,13 +195,15 @@ class qaoa_qutip(object):
                 
             H_simulation = -sum(H_0_noise) + sum(H_int_noise)
             
-        if self.problem == "MAX-CUT":
+        if self.problem == "MAXCUT":
             link_noise = np.random.normal(1, 
                                           gate_noise, 
                                           len(self.G.edges))
             H_int = [link_noise[k]*(self.Id - self.Z[i] * self.Z[j]) / 2 for k, (i,j) in  enumerate(self.G.edges)]
-            H_c = -1 * sum(H_int)
+            H_simulation = -1 * sum(H_int)
             
+            
+                    
         
         return H_simulation
 
