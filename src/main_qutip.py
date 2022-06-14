@@ -180,6 +180,8 @@ results_data_names = ['iter '] + angle_names +\
                                  'time_opt_kernel',
                                  'time_step'
                                  ]
+if len(gp.kernel_.theta) > 2:
+    results_data_names += ['noise_kernel']
                      
 for i_tr, x in enumerate(X_train):
     fin_state, mean_energy, variance, fidelity_tot =  qaoa.quantum_algorithm(x)
@@ -198,8 +200,8 @@ for i_tr, x in enumerate(X_train):
         if approx_ratio > best_approx_ratio:
             best_approx_ratio = approx_ratio
             
-    data_.append([i_tr] +
-                 x + 
+    new_data = [i_tr] +\
+                 x + \
                  [mean_energy,
                   best_energy,
                   approx_ratio,
@@ -208,9 +210,14 @@ for i_tr, x in enumerate(X_train):
                   best_fidelity,
                   variance,
                   np.exp(gp.kernel_.theta[1]),
-                  np.exp(gp.kernel_.theta[0]), 
+                  np.exp(gp.kernel_.theta[0]),
                   0, 0, 0, 0, 0, 0, 0]
-                )
+    
+    if len(gp.kernel_.theta) > 2:
+        new_data += [np.exp(gp.kernel_.theta[2])]
+    
+    data_.append(new_data)
+                
 print('groundstate :',qaoa.gs_en)
 folder_name = file_name.split('.')[0]
 folder = os.path.join(output_folder, folder_name)
@@ -259,6 +266,8 @@ for i in range(nbayes):
     params = np.exp(gp.kernel_.theta)
     constant_kernel = params[0]
     corr_length = params[1]
+    if len(params) > 2:
+        noise_kernel = params[2]
     
     if mean_energy < best_energy:
             best_energy = mean_energy
@@ -292,6 +301,8 @@ for i in range(nbayes):
                  step_time
                  ]
                )
+    if len(gp.kernel_.theta) > 2:
+        new_data += [noise_kernel]
     data_.append(new_data)
     print(f'{i +1}/{nbayes}, en: {mean_energy}, var: {variance}, '
           f'fid: {fidelity_tot},\n {next_point}')
@@ -304,7 +315,7 @@ for i in range(nbayes):
     else:
         np.save(folder +"/"+ "opt".format(i), np.array(kernel_opts, dtype = object))
     np.save(folder +"/"+ "log_marg_likelihoods".format(i), np.array(log_likelihood_grids,  dtype = object))
-    np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
+    #np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
     np.save(folder +"/"+ "acq_funcs".format(i), np.array(acq_funcs, dtype = object))
 
 
