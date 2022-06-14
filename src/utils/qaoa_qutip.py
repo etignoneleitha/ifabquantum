@@ -150,8 +150,8 @@ class qaoa_qutip(object):
         if self.gate_noise == None:
             eigen_energies,eigen_states = np.linalg.eig(self.H_c)
         else:
-            self.H_simulation = self.noisy_hamiltonian(self.gate_noise)
-            eigen_energies, eigen_states = np.linalg.eig(self.H_simulation)
+            H_simulation = self.noisy_hamiltonian(self.gate_noise)
+            eigen_energies, eigen_states = np.linalg.eig(H_simulation)
             
         evol_op = []
        #  for j_state, el in enumerate(eigen_energies):
@@ -164,7 +164,7 @@ class qaoa_qutip(object):
             proj = state_.proj()
             evol_op.append(np.exp(-1j * e_en * gamma) * proj)
         
-        U= sum(evol_op)
+        U = sum(evol_op)
 
         return U
 
