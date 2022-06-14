@@ -155,7 +155,7 @@ for depth in [1,2,3,4,5]:
             return angle_names
         
         output_folder = Path(__file__).parents[1] / "output"
-        frac_part, whole_part = math.modf(bond_distance)
+        frac_part, whole_part = math.modf(gate_noise)
         frac_part = str(round(frac_part, 4))[2:]
         whole_part = int(whole_part)
         file_name = f'Bayes_{problem}_p_{depth}_num_nodes_{num_nodes}_train_{nbayes}_seed_{seed}'
@@ -163,7 +163,8 @@ for depth in [1,2,3,4,5]:
             file_name += f'_shots_{shots}'
         if gate_noise is not None:
             file_name += f'_noise_{whole_part}_{frac_part}'
-
+        print(file_name)
+        continue
         file_name += '.dat'
         data_ = []
         angle_names = angle_names_string()
