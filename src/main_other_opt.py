@@ -98,7 +98,10 @@ for depth in [1,2,3,4,5]:
                      
         folder_name = file_name.split('.')[0]
         folder = os.path.join(output_folder, folder_name)
-        os.makedirs(folder, exist_ok = False)
+        try:
+            os.makedirs(folder, exist_ok = False)
+        except:
+            continue
         data_header = " ".join(["{:>7} ".format(i) for i in results_data_names])
 
         ###### FUNC WRAPPER and CALLBACK #######
