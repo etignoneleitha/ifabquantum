@@ -53,8 +53,8 @@ name_plot = str(seed)
 
 ################ CREATE GRAPH AND QAOA ################
 
-for depth in [1,2,3,4,5]:
-    for gate_noise in [0, 0.001, 0.002, 0.005, 0.01,  0.02, 0.05, 0.1]:
+for depth in [1]:
+    for gate_noise in [ 0.001 ]:#0.002, 0.005, 0.01,  0.02, 0.05, 0.1]:
 
         if problem == 'H2' or problem == 'H2_BK':
             G = create_chain(4)
@@ -164,7 +164,6 @@ for depth in [1,2,3,4,5]:
         if gate_noise is not None:
             file_name += f'_noise_{whole_part}_{frac_part}'
         print(file_name)
-        continue
         file_name += '.dat'
         data_ = []
         angle_names = angle_names_string()
@@ -179,6 +178,7 @@ for depth in [1,2,3,4,5]:
                                          'variance',
                                          'corr_length',
                                          'const_kernel',
+                                         'noise_kernel',
                                          'std_energies',
                                          'average_distances',
                                          'nit',
@@ -216,6 +216,7 @@ for depth in [1,2,3,4,5]:
                           variance,
                           np.exp(gp.kernel_.theta[1]),
                           np.exp(gp.kernel_.theta[0]), 
+                          np.exp(gp.kernel_.theta[2]),
                           0, 0, 0, 0, 0, 0, 0]
                         )
         print('groundstate :',qaoa.gs_en)
@@ -266,6 +267,7 @@ for depth in [1,2,3,4,5]:
             params = np.exp(gp.kernel_.theta)
             constant_kernel = params[0]
             corr_length = params[1]
+            noise_kernel = params[2]
     
             if mean_energy < best_energy:
                     best_energy = mean_energy
@@ -290,6 +292,7 @@ for depth in [1,2,3,4,5]:
                          variance,
                          corr_length,
                          constant_kernel,
+                         noise_kernel,
                          std_pop_energy,
                          avg_sqr_distances,
                          n_it,

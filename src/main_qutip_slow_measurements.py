@@ -56,7 +56,7 @@ depths = [1, 2, 3]
 shots_list = [32, 16, 8, 4]
 
 for depth in depths:
-    for shots in shot_list:
+    for shots in shots_list:
 
         if problem == 'H2' or problem == 'H2_BK':
             G = create_chain(4)
@@ -177,6 +177,7 @@ for depth in depths:
                                          'variance',
                                          'corr_length',
                                          'const_kernel',
+                                         'noise_kernel',
                                          'std_energies',
                                          'average_distances',
                                          'nit',
@@ -214,6 +215,7 @@ for depth in depths:
                           variance,
                           np.exp(gp.kernel_.theta[1]),
                           np.exp(gp.kernel_.theta[0]), 
+                          np.exp(gp.kernel_.theta[2]),
                           0, 0, 0, 0, 0, 0, 0]
                         )
         print('groundstate :',qaoa.gs_en)
@@ -264,6 +266,7 @@ for depth in depths:
             params = np.exp(gp.kernel_.theta)
             constant_kernel = params[0]
             corr_length = params[1]
+            noise_kernel = params[2]
     
             if mean_energy < best_energy:
                     best_energy = mean_energy
@@ -288,6 +291,7 @@ for depth in depths:
                          variance,
                          corr_length,
                          constant_kernel,
+                         noise_kernel,
                          std_pop_energy,
                          avg_sqr_distances,
                          n_it,
