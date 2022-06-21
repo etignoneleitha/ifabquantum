@@ -40,6 +40,7 @@ average_connectivity = args.average_connectivity
 problem = args.problem
 nbayes = args.nbayes
 optimizer_method = args.optimizer
+shots = args.shots
 
 param_range = np.array([[0.01, np.pi], [0.01, np.pi]])   # extremes where to search for the values of gamma and beta
 
@@ -61,7 +62,7 @@ for depth in [1,2,3,4,5]:
         else:
             G = create_random_regular_graph(num_nodes, degree=3, seed=1)
     
-        qaoa = qaoa_qutip(G, problem=problem)
+        qaoa = qaoa_qutip(G, problem=problem, shots = shots)
         gs_energy, gs_state, degeneracy = qaoa.gs_en, qaoa.gs_states, qaoa.deg
 
 
@@ -82,6 +83,9 @@ for depth in [1,2,3,4,5]:
         
         output_folder = Path(__file__).parents[1] / "output"
         file_name = f'{optimizer_method}_{problem}_p_{depth}_num_nodes_{num_nodes}_seed_{seed}'
+        if shots is not None:
+            file_name += '_shots_{shots}'
+            
         data_iter = []
         data_nfev = []
         angle_names = angle_names_string()
@@ -217,6 +221,7 @@ for depth in [1,2,3,4,5]:
                                    callback = callback_bh,
                                    niter_success = 2,
                                    )
+                                   
             print(results.message)
         elif optimizer_method == 'diff_evol':
             def callback_de(x, convergence):
