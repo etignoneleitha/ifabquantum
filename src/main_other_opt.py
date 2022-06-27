@@ -84,7 +84,7 @@ for depth in [1,2,3,4,5]:
         output_folder = Path(__file__).parents[1] / "output"
         file_name = f'{optimizer_method}_{problem}_p_{depth}_num_nodes_{num_nodes}_seed_{seed}'
         if shots is not None:
-            file_name += '_shots_{shots}'
+            file_name += f'_shots_{shots}'
             
         data_iter = []
         data_nfev = []
