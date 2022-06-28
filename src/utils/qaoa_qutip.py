@@ -712,7 +712,7 @@ class qaoa_qutip(object):
 
         return X, Y
         
-    def get_landscape(self, angle_bounds, num):
+    def get_landscape(self, angle_bounds, num, verbose = 0):
     
         fig = plt.figure()
         energies = np.zeros((num, num))
@@ -726,6 +726,8 @@ class qaoa_qutip(object):
                 energies[j, i] = en
                 fidelities[j, i] = fid
                 variances[j, i] = var
+                if verbose:
+                    print(f'\u03B3: {i+1}/num, \u03B2: {j+1}/num')
         
         return energies, fidelities, variances
         
