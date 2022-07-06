@@ -70,19 +70,20 @@ class qaoa_qutip(object):
 
         self.Had = [(self.X[j] + self.Z[j]) / np.sqrt(2) for j in range(L)]
 
-        H_c, gs_states, gs_en, deg, eigenstates, eigenvalues= self.hamiltonian_cost(
-                                                                problem=problem, 
-                                                                penalty=DEFAULT_PARAMS["penalty"],
-                                                                bond_distance =  bond_distance
-                                                                )
+        H_c, gs_states, gs_en, deg, eigenstates, eigenvalues, projectors = self.hamiltonian_cost(
+                                            problem=problem, 
+                                            penalty=DEFAULT_PARAMS["penalty"],
+                                            bond_distance =  bond_distance
+                                            )
 
         self.H_c = H_c
         self.gs_states = gs_states
         self.gs_en = gs_en
         self.deg = deg
         self.eigenstates = eigenstates
+        self.projectors = projectors
         self.energies = eigenvalues
-        
+
         self.gs_binary = self.binary_gs(gs_states)
 
 
@@ -121,39 +122,52 @@ class qaoa_qutip(object):
         for qubit_n in range(self.N):
             U = self.Rx(qubit_n, beta) * U
         return U
-    
-    
+
+
+    # def U_c(self, gamma):
+#         # evolution operator of U_c
+#         eigen_energies = np.diagonal(self.H_c)
+#         evol_op = []
+#         for j_state, el in enumerate(eigen_energies):
+#             bin_state = np.binary_repr(j_state, self.N)
+#             eigen_state =  qu.tensor([qu.basis(2, int(e_state)) for e_state in bin_state])
+#             evol_op.append(np.exp(-1j * el * gamma) * eigen_state * eigen_state.dag())
+#         U = sum(evol_op)
+# 
+#         return U
+
+   #  def U_c(self, gamma):
+#         # evolution operator of U_c
+#         evol_op = []
+#         for energy, eigen_state in zip(self.energies, self.eigenstates):
+#             evol_op.append(np.exp(-1j * energy * gamma) * eigen_state * eigen_state.dag())
+#             
+#         U = sum(evol_op)
+# 
+#         return U
+
     def U_c(self, gamma):
                     
         evol_op = []
-   
-        for e_en, e_state in zip(self.energies, self.eigenstates):
-            state_ = qu.Qobj(e_state, dims = [[2]*self.N] +[ [1]*self.N])
-            proj = state_.proj()
-            evol_op.append(np.exp(-1j * e_en * gamma) * proj)
+        
+        if self.gate_noise is not None:
+            ham = self.noisy_hamiltonian(self.gate_noise)
+            
+            energies, states = ham.eigenstates(sort = 'low')
+
+            for en, state_ in zip(energies, states):
+                proj = state_.proj()
+                evol_op.append(np.exp(-1j * en * gamma) * proj)
+            
+        else:
+        
+            for e_en, proj in zip(self.energies, self.projectors):
+        
+                evol_op.append(np.exp(-1j * e_en * gamma) * proj)
         
         U = sum(evol_op)
 
         return U
-
-#     def U_c_old(self, gamma):
-#         # evolution operator of U_c
-#         if self.gate_noise == None:
-#             eigen_energies,eigen_states = np.linalg.eig(self.H_c)
-#         else:
-#             H_simulation = self.noisy_hamiltonian(self.gate_noise)
-#             eigen_energies, eigen_states = np.linalg.eig(H_simulation)
-#             
-#         evol_op = []
-#         
-#         for e_en, e_state in zip(eigen_energies, eigen_states):
-#             state_ = qu.Qobj(e_state, dims = [[2]*self.N] +[ [1]*self.N])
-#             proj = state_.proj()
-#             evol_op.append(np.exp(-1j * e_en * gamma) * proj)
-#         
-#         U = sum(evol_op)
-# 
-#         return U
 
     def noisy_hamiltonian(self, gate_noise):
     
@@ -541,8 +555,11 @@ class qaoa_qutip(object):
 #         df.save_to_csv()
 #         exit()
         gs_states = [state_gs for state_gs in eigenstates[:degeneracy]]
-            
-        return H_c, gs_states, gs_en, degeneracy, eigenstates, energies
+        projectors = [state_.proj() for state_ in eigenstates]
+        
+        
+        
+        return H_c, gs_states, gs_en, degeneracy, eigenstates, energies, projectors
 
     def classical_cost(self, bitstring, penalty=DEFAULT_PARAMS["penalty"]):
     
@@ -572,7 +589,107 @@ class qaoa_qutip(object):
 
         return cost
 
-
+#     def quantum_algorithm(self,
+#                           params,
+#                           obj_func="energy",
+#                           penalty=DEFAULT_PARAMS["penalty"]):
+# 
+#         depth = int(len(params)/2)
+#         gammas = params[::2]
+#         betas = params[1::2]
+#         states = []
+#         state_0 = qu.tensor([qu.basis(2, 0)] * self.N)
+#         #states.append(state_0)
+#         
+#         for h in self.Had:
+#             state_0 = h * state_0
+#         #states.append(state_0)
+#         
+#         evol_matrix = sum(self.Had)
+#         for p in range(depth):
+#             current_hamiltonian = (betas[p]*sum(self.X) + gammas[p] * self.H_c )* evol_matrix
+#             eigval, eigstates = current_hamiltonian.eigenstates()
+#             state_0 =  self.U_c(gammas[p]) * state_0
+#             state_0 = self.U_mix(betas[p]) * state_0
+#             states.append([np.abs(state_0.overlap(eigstates[0]))**2, np.abs(state_0.overlap(eigstates[1]))**2])
+#         
+#         if self.shots is None:
+#             mean_energy = qu.expect(self.H_c, state_0)
+# 
+#             variance = qu.expect(self.H_c * self.H_c, state_0) - mean_energy**2
+# 
+#             fidelities= []
+#             for gs_state in self.gs_states:
+#                 fidelities.append(np.abs(state_0.overlap(gs_state))**2)
+# 
+#             fidelity_tot = np.sum(fidelities)
+#             
+#            
+#             if obj_func == "energy":
+#                 return state_0, mean_energy, variance, fidelity_tot, states
+# 
+#             elif obj_func == "gibbs":
+#                 gibbs_op = self.gibbs_obj_func(eta=2)
+#                 mean_gibbs = -np.log(qu.expect(gibbs_op, state_0))
+#                 return state_0, mean_gibbs, variance, fidelity_tot
+#             
+#         else:
+#             prob_each_state = np.array([np.real(x.conj() * x) for x in state_0.full()]).squeeze()
+#             
+#             samples = np.random.choice(2**self.N, 
+#                                                size = self.shots,
+#                                                replace = True,
+#                                                p = prob_each_state
+#                                                )
+#             samples_as_bitstrings = np.vectorize(np.binary_repr)(samples, self.N)
+#             results = {}
+#             results_counts = np.unique(samples_as_bitstrings, return_counts = True)
+#             results = dict(zip(results_counts[0], results_counts[1]))
+#             results_sorted = dict(sorted(results.items(), key=lambda item: item[1], reverse = True))
+#             #print(results_sorted)
+#             
+#             # 
+# #             sol_ratio = 0
+# #             if len(results_sorted)>1 :
+# #                 for i in range(len(results_sorted)):
+# #                     first_key, second_key =  list(results_sorted.keys())[i:i+2]
+# #                     
+# #                     if (first_key in self.gs_binary):
+# #                         if (second_key in self.gs_binary):
+# #                             continue
+# #                         elif(results_sorted[second_key] > 0):
+# #                             sol_ratio = results_sorted[first_key]/results_sorted[second_key]
+# #                         else:
+# #                             sol_ratio = self.shots
+# #             else:
+# #                 first_key =  list(result_sorted.keys())[0]
+# #                 if (first_key in self.gs_binary):
+# #                     sol_ratio = self.shots    #if the only sampled value is the solution the ratio is infinte so we put the # of shots
+# #             
+# #             return sol_ratio
+#                 
+#             key_sorted = list(results_sorted.keys())
+#             mean_energy = sum([self.classical_cost(s)*results_sorted[s] for s in results_sorted.keys()])/self.shots
+#             #variance = sum([
+#             #    ((self.classical_cost(s) - mean_energy)*list(results_sorted.values())[s])**2 
+#             #                    for s in key_sorted])/self.shots
+#             variance = 0
+#             
+#             
+#             fidelities= []
+#             
+#             for gs_state in self.gs_binary:
+#             
+#                 if gs_state in results_sorted.keys():
+#                 
+#                     fidelities.append(results_sorted[gs_state])
+#                     
+#                 else:
+#                     continue
+#                 
+#             fidelity_tot = np.sum(fidelities)/self.shots
+#             
+#             return state_0, mean_energy, variance, fidelity_tot , states
     def quantum_algorithm(self,
                           params,
                           obj_func="energy",
@@ -581,13 +698,19 @@ class qaoa_qutip(object):
         depth = int(len(params)/2)
         gammas = params[::2]
         betas = params[1::2]
+        states = []
         state_0 = qu.tensor([qu.basis(2, 0)] * self.N)
-
+        states.append(state_0)
+        
         for h in self.Had:
             state_0 = h * state_0
+        states.append(state_0)
         
         for p in range(depth):
-            state_0 = self.U_mix(betas[p]) * self.U_c(gammas[p]) * state_0
+            state_0 =  self.U_c(gammas[p]) * state_0
+            states.append(state_0)
+            state_0 = self.U_mix(betas[p]) * state_0
+            states.append(state_0)
         
         if self.shots is None:
             mean_energy = qu.expect(self.H_c, state_0)
@@ -617,10 +740,6 @@ class qaoa_qutip(object):
                                                replace = True,
                                                p = prob_each_state
                                                )
-            # print('sampled: ')
-#             print(self.shots)
-#             exit()
-#             print(samples)
             samples_as_bitstrings = np.vectorize(np.binary_repr)(samples, self.N)
             results = {}
             results_counts = np.unique(samples_as_bitstrings, return_counts = True)
@@ -669,7 +788,7 @@ class qaoa_qutip(object):
                 
             fidelity_tot = np.sum(fidelities)/self.shots
             
-            return state_0, mean_energy, variance, fidelity_tot, 
+            return state_0, mean_energy, variance, fidelity_totd
             
 
     def generate_random_points(self,
@@ -749,12 +868,12 @@ class qaoa_qutip(object):
         df = pd.DataFrame(np.column_stack((energies, counts)), columns = ['energy', 'counts'])
         print('\n####CLASSICAL SOLUTION######\n')
         print('Lowest energy:', d)
-        print('First excited states:', {k: results[k] for k in list(results)[1:5]})
+        first_exc = {k: results[k] for k in list(results)[self.deg:5]}
+        print('First excited states:', first_exc)
         print('Energy distribution')
         print(df)
         if save:
             df.to_csv('output/energy_statistics.dat')
         
-        
-        return d, en
+        return d, en, first_exc
         
