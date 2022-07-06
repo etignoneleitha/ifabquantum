@@ -59,7 +59,7 @@ for depth in [6, 7, 8, 9]:
         if problem == 'H2' or problem == 'H2_BK':
             G = create_chain(4)
         elif problem == 'H2_reduced' or problem == 'H2_BK_reduced':
-            G = create_chain(2)
+            G = create_chain(2):
         else:
             G = create_random_regular_graph(num_nodes, degree=3, seed=1)
 
@@ -257,10 +257,10 @@ for depth in [6, 7, 8, 9]:
             #log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid(show = False, save = True)
     
             #log_likelihood_grids.append(log_marginal_likelihood_grid)
-            k_matrix, _ = gp.get_covariance_matrix()
-            kernel_matrices.append(k_matrix)
-    
-            kernel_opts.append(gp.samples)
+#             k_matrix, _ = gp.get_covariance_matrix()
+#             kernel_matrices.append(k_matrix)
+#     
+#             kernel_opts.append(gp.samples)
         
         
             #### FIT NEW POINT #####
@@ -313,13 +313,13 @@ for depth in [6, 7, 8, 9]:
             df = pd.DataFrame(data = data_, columns = results_data_names)
             df.to_csv(folder + "/" + file_name , columns = results_data_names, header = data_header)
     
-            if diff_evol_func == None:
-                np.save(folder +"/"+ "kernel_opt".format(i), np.array(kernel_opts, dtype = object))
-            else:
-                np.save(folder +"/"+ "opt".format(i), np.array(kernel_opts, dtype = object))
-            np.save(folder +"/"+ "log_marg_likelihoods".format(i), np.array(log_likelihood_grids,  dtype = object))
-            #np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
-            np.save(folder +"/"+ "acq_funcs".format(i), np.array(acq_funcs, dtype = object))
+#             if diff_evol_func == None:
+#                 np.save(folder +"/"+ "kernel_opt".format(i), np.array(kernel_opts, dtype = object))
+#             else:
+#                 np.save(folder +"/"+ "opt".format(i), np.array(kernel_opts, dtype = object))
+#             np.save(folder +"/"+ "log_marg_likelihoods".format(i), np.array(log_likelihood_grids,  dtype = object))
+#             #np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
+#             np.save(folder +"/"+ "acq_funcs".format(i), np.array(acq_funcs, dtype = object))
 
 
 

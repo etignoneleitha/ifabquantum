@@ -69,12 +69,7 @@ qaoa = qaoa_qutip(G,
 
 
 
-# num = 50
-# a, b, c = qaoa.get_landscape(param_range, num)
-# np.savetxt(f'energy_landscape_{param_range[0]}_nodes_{num_nodes}_prob_{problem}_{num}.dat', a)
-# np.savetxt(f'fidelities_landscape_{param_range[0]}_nodes_{num_nodes}_prob_{problem}_{num}.dat', b)
-# np.savetxt(f'variances_landscape_{param_range[0]}_nodes_{num_nodes}_prob_{problem}_{num}.dat', c)
-# exit()
+
 gs_energy, gs_state, degeneracy = qaoa.gs_en, qaoa.gs_states, qaoa.deg
 
 print('Information on the hamiltonian')
@@ -84,7 +79,6 @@ print('GS degeneracy: ', degeneracy)
 
 print('GS :', qaoa.gs_states[0])
 print('ham :, ', qaoa.H_c)
-
 
 DEFAULT_PARAMS["seed"] = seed + i_trial
 
@@ -248,16 +242,16 @@ for i in range(nbayes):
     y_next_point = mean_energy
     fidelity = fidelity_tot
     approx_ratio = mean_energy/qaoa.gs_en
-    #if depth <2:
-        #acq_func = gp.get_acquisition_function(show = False, save = True)
-        #acq_funcs.append(acq_func)
+    # if depth <2:
+#         acq_func = gp.get_acquisition_function(show = False, save = True)
+#         acq_funcs.append(acq_func)
     #log_marginal_likelihood_grid = gp.get_log_marginal_likelihood_grid(show = False, save = True)
     
     #log_likelihood_grids.append(log_marginal_likelihood_grid)
-    k_matrix, _ = gp.get_covariance_matrix()
-    kernel_matrices.append(k_matrix)
+   # k_matrix, _ = gp.get_covariance_matrix()
+    #kernel_matrices.append(k_matrix)
     
-    kernel_opts.append(gp.samples)
+    #kernel_opts.append(gp.samples)
         
         
     #### FIT NEW POINT #####
@@ -270,7 +264,7 @@ for i in range(nbayes):
         noise_kernel = params[2]
     
     if mean_energy < best_energy:
-            best_energy = mean_energy
+        best_energy = mean_energy
     if fidelity_tot > best_fidelity:
         best_fidelity = fidelity_tot
     if approx_ratio > best_approx_ratio:
@@ -310,13 +304,13 @@ for i in range(nbayes):
     df = pd.DataFrame(data = data_, columns = results_data_names)
     df.to_csv(folder + "/" + file_name , columns = results_data_names, header = data_header)
     
-    if diff_evol_func == None:
-        np.save(folder +"/"+ "kernel_opt".format(i), np.array(kernel_opts, dtype = object))
-    else:
-        np.save(folder +"/"+ "opt".format(i), np.array(kernel_opts, dtype = object))
-    np.save(folder +"/"+ "log_marg_likelihoods".format(i), np.array(log_likelihood_grids,  dtype = object))
-    #np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
-    np.save(folder +"/"+ "acq_funcs".format(i), np.array(acq_funcs, dtype = object))
+   #  if diff_evol_func == None:
+#         np.save(folder +"/"+ "kernel_opt".format(i), np.array(kernel_opts, dtype = object))
+#     else:
+#         np.save(folder +"/"+ "opt".format(i), np.array(kernel_opts, dtype = object))
+#     np.save(folder +"/"+ "log_marg_likelihoods".format(i), np.array(log_likelihood_grids,  dtype = object))
+#     #np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
+#     np.save(folder +"/"+ "acq_funcs".format(i), np.array(acq_funcs, dtype = object))
 
 
 
