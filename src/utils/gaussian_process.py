@@ -137,7 +137,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                                initial_theta,
                                method="L-BFGS-B",
                                jac=True,
-                               callback = callbackF,
+                               #callback = callbackF,
                                bounds=bounds,
                                options={'maxiter': self.max_iter,
                                         'gtol': self.gtol}
