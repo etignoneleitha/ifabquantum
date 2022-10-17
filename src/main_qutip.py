@@ -34,7 +34,6 @@ nbayes = args.nbayes
 shots = args.shots
 gate_noise = args.gate_noise
 kernel_optimizer = 'fmin_l_bfgs_b' #fmin_l_bfgs_b'#'differential_evolution' #fmin_l_bfgs_b'
-diff_evol_func = None
 method = 'DIFF-EVOL'
 param_range = np.array([[0.01, np.pi], [0.01, np.pi]])   # extremes where to search for the values of gamma and beta
 
@@ -82,7 +81,6 @@ gp = MyGaussianProcessRegressor(kernel=kernel,
                                 n_restarts_optimizer=9,
                                 gtol=1e-6,
                                 max_iter=1e4,
-                                diff_evol_func = diff_evol_func
                                 )
 
 print('Created gaussian process istance with starting kernel')
