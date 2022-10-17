@@ -3,33 +3,20 @@ import matplotlib.pyplot as plt
 
 from scipy.optimize import minimize
 from ._differentialevolution import DifferentialEvolutionSolver
-from .HMC import *
-from .grad_descent import *
 from  utils.default_params import *
 # SKLEARN
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel, Matern, ConstantKernel
-from itertools import product
 from sklearn.utils.optimize import _check_optimize_result
-from scipy.stats import norm
 from scipy.special import ndtr
-from sklearn.preprocessing import StandardScaler
-import random
-import dill
-import warnings
-from sklearn.exceptions import ConvergenceWarning
-from pathlib import Path
 
-#import tensorflow.compat.v2 as tf
-#tf.enable_v2_behavior()
-#import tensorflow_probability as tfp
 
 
 # Allows to change max_iter (see cell below) as well as gtol.
 # It can be straightforwardly extended to other parameters
 class MyGaussianProcessRegressor(GaussianProcessRegressor):
     
-    def __init__(self, angles_bounds, gtol, max_iter, diff_evol_func, *args, **kwargs):
+    def __init__(self, angles_bounds, gtol, max_iter, *args, **kwargs):
         '''Initializes gaussian process class
 
         The class also inherits from Sklearn GaussianProcessRegressor
@@ -58,11 +45,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         self.x_best = 0
         self.y_best = np.inf
         self.seed = DEFAULT_PARAMS["seed"]
-        self.mcmc_samples = []
         self.samples = []
-        self.average_kernel_params = [DEFAULT_PARAMS['initial_length_scale'], DEFAULT_PARAMS['initial_kernel_constant']]
-        self.std_kernel_params = [0,0]
-        self.diff_evol_func = diff_evol_func
 
     def get_info(self):
         '''
@@ -145,23 +128,6 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
             _check_optimize_result("lbfgs", opt_res)
             theta_opt, func_min = opt_res.x, opt_res.fun
 
-
-        elif self.optimizer == 'differential_evolution':
-            diff_evol = DifferentialEvolutionSolver(obj_func_no_grad,
-                                            x0 = initial_theta,
-                                            bounds = bounds,
-                                            popsize = 15,
-                                            tol = .001,
-                                            dist_tol = 0.01,
-                                            seed = self.seed)# as diff_evol:
-            results,average_norm_distance_vectors, std_population_energy, conv_flag = diff_evol.solve()
-            theta_opt, func_min = results.x, results.fun
-
-        elif self.optimizer == 'monte_carlo':
-            M = 30
-            hyper_params = self.pick_hyperparameters(M, DEFAULT_PARAMS['length_scale_bounds'], DEFAULT_PARAMS['constant_bounds'])
-            theta_opt = np.mean(np.log(hyper_params), axis = 0)
-            func_min = obj_func_no_grad(theta_opt)
 
         elif callable(self.optimizer):
             theta_opt, func_min = self.optimizer(obj_func,
@@ -288,51 +254,10 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         cdf = ndtr((f_prime - f_x)/sigma_x)
         pdf = 1/(sigma_x*np.sqrt(2*np.pi)) * np.exp(-((f_prime -f_x)**2)/(2*sigma_x**2))
         alpha_function = (f_prime - f_x) * cdf + sigma_x * pdf
-        #print((f_prime - f_x) * cdf, sigma_x * pdf )
+        
         return sign*alpha_function
 
 
-    def pick_hyperparameters(self, N_points, bounds_elle, bounds_sigma):
-        ''' Generates array of (N_points,2) random hyperaparameters inside given bounds
-        '''
-        init_state = np.ones(2)*0.1 # np.ones(len(self.kernel_.theta))
-        print('begin slice sampling')
-        NUM_CHAINS = 1
-        dtype = np.float32
-        init_state = np.ones([len(self.kernel_.theta),1], dtype=dtype)
-        samples = tfp.mcmc.sample_chain(
-                                        num_results=300,
-                                        current_state=init_state,
-                                        kernel=tfp.mcmc.SliceSampler(
-                                            self.log_marginal_likelihood,
-                                            step_size=0.05,
-                                            max_doublings=6),
-                                        num_burnin_steps=0,
-                                        trace_fn=None), 
-        print('end slice sampling')
-        samples = samples[0].numpy()
-        self.mcmc_samples = np.squeeze(samples)
-        print('i punti trovati sono:')
-        print(samples)
-        samples = samples[-N_points:] #taking the last N_points
-        self.average_kernel_params = np.squeeze(np.mean(samples, axis = 0))
-        self.std_kernel_params = np.squeeze(np.std(samples, axis = 0))
-        print('avg pm std samples: ', self.average_kernel_params, self.std_kernel_params)
-        
-        return samples
-        
-    def mc_acq_func(self, x, *args):
-        ''' Averages the value of the acq_func for different sets of hyperparameters chosen by pick_hyperparameters
-
-        method '''
-        hyper_params = args[-1]
-        acq_func_values = []
-        for params in hyper_params:
-            self.kernel.theta = params
-            super().fit(self.X, self.Y)
-            acq_func_values.append(self.acq_func(x, *args))
-        
-        return np.mean(acq_func_values)
 
     def bayesian_opt_step(self, method = 'DIFF-EVOL', init_pos = None):
         ''' Performs one step of bayesian optimization
@@ -356,86 +281,9 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         samples = []
         acqfunvalues = []
 
-        def callbackF(Xi, convergence):
-            samples.append(Xi.tolist())
-            acqfunvalues.append(self.acq_func(Xi, self, 1)[0])
-
-        if method == 'GRID_SEARCH':
-            if depth >1:
-                print('PLS No grid search with p > 1')
-                raise Error
-            X= np.linspace(0, 1, 50, dtype = int)
-            Y= np.linspace(0,1, 50, dtype = int)
-            X_test = list(product(X, Y))
-
-
-            alpha = self.acq_func(X_test, self, 1)
-            #argmax is a number between 0 and N_test**-1 telling us where is the next point to sample
-            argmax = np.argmax(np.round(alpha, 3))
-            next_point = X_test[argmax]
-
-        if method == 'HMC':
-            path_length = .2
-            step_size = .02
-            epsilon = .001
-            epochs = 10
-            hmc_samples, traj, success= HMC(func = self.acq_func,
-                                            path_len=path_length,
-                                            step_size=step_size,
-                                            epsilon = epsilon,
-                                            epochs=epochs)
-            cols = int(len(init_pos)*4)
-            rows = int((path_length/step_size+1)*(epochs))
-            traj_to_print = np.reshape(traj, (rows, cols))
-            np.savetxt('Trajectories.dat',
-                        traj_to_print,
-                        header='[q_i, q_f],  [p_i, p_f],  self.acq_func(q1), dVdQ_1, dVdq_2',
-                        fmt='  %1.3f')
-
-            accepted_samples = hmc_samples[success == True]
-            if len(accepted_samples) == 0:
-                print('Warning: there where 0 accepted samples. Restarting with new values')
-                next_point = 0
-
-            if accepted_samples.shape[0] > 0:
-                next_point = np.mean(accepted_samples[-10:], axis = 0)
-            else:
-                next_point = [0,0]
-
-            if epochs< 100:
-                plot_trajectories(self.acq_func, traj, success, save = True)
-
-        if method == 'FD':
-            l_rate = 0.001
-            if init_pos is None:
-                print('You need to pass an initial point if using Finite differences')
-                raise Error
-            gd_params = gradient_descent(self.acq_func,
-                                        l_rate,
-                                        init_pos,
-                                        max_iter = 400,
-                                        method = method,
-                                        verbose = 1)
-            next_point = gd_params[-1][:2]
-
-        if method == 'SCIPY':
-            if init_pos is None:
-                print('You need to pass an initial point if using scipy')
-                raise Error
-            results = minimize(self.acq_func,
-                                bounds = [(0,1), (0,1)]*depth,
-                                x0 = init_pos,
-                                args = (self, -1))
-            next_point = results.x
-
         if method == 'DIFF-EVOL':
-            if self.diff_evol_func == 'mc':
-                best_params = np.array(self.pick_hyperparameters(2, DEFAULT_PARAMS['length_scale_bounds'], DEFAULT_PARAMS['constant_bounds']))
-                diff_evol_args = [-1, best_params]
-                fun = self.mc_acq_func
-            else:
-                fun = self.acq_func
-                diff_evol_args = [-1]
+            fun = self.acq_func
+            diff_evol_args = [-1]
             with DifferentialEvolutionSolver(fun,
                                             bounds = [(0,1), (0,1)]*depth,
                                             callback = None,
@@ -456,14 +304,6 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         eigenvalues, eigenvectors = np.linalg.eig(K)
         
         return K, eigenvalues
-        
-    def get_covariance_matrix_cholesky(self):
-        K = self.L_ @ np.transpose(self.L_)       
-        K[np.diag_indices_from(K)] += self.alpha
-        eigenvalues, eigenvectors = np.linalg.eig(K)
-        
-        return K, eigenvalues, np.linalg.inv(K)
-        
         
     def plot_covariance_matrix(self, show = True, save = False):
         K = self.get_covariance_matrix()
