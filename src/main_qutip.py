@@ -1,22 +1,13 @@
-import sys
-sys.settrace
 import numpy as np
-import matplotlib.pyplot as plt
 from utils.qaoa_qutip import *
 from utils.gaussian_process import *
-from utils.create_graphs import (create_random_graph,
-                                 create_chair_graph,
-                                 create_random_regular_graph,
-                                 create_chain
-                                 )
+from utils.create_graphs import create_random_regular_graph
 from utils.parameters import parse_command_line
 from utils.default_params import *
 import time
 from pathlib import Path
 import os
 import pandas as pd
-import networkx as nx
-from sklearn.metrics.pairwise import euclidean_distances
 
 np.set_printoptions(precision=4, suppress=True)
 
@@ -29,11 +20,15 @@ args = parse_command_line()
 seed = args.seed
 fraction_warmup = args.fraction_warmup
 depth = args.p
+
+### ERASE? ###
 trials = args.trials
 i_trial = args.i_trial
+average_connectivity = args.average_connectivity
+##############
+
 num_nodes = args.num_nodes
 nwarmup = args.nwarmup
-average_connectivity = args.average_connectivity
 problem = args.problem
 nbayes = args.nbayes
 shots = args.shots
@@ -46,28 +41,16 @@ param_range = np.array([[0.01, np.pi], [0.01, np.pi]])   # extremes where to sea
 global_time = time.time()
 
 np.random.seed(seed)
-num_graph = seed
-name_plot = str(seed)
 
 
 ################ CREATE GRAPH AND QAOA ################
 
-
-if problem == 'H2' or problem == 'H2_BK':
-    G = create_chain(4)
-elif problem == 'H2_reduced' or problem == 'H2_BK_reduced':
-    G = create_chain(2)
-else:
-    G = create_random_regular_graph(num_nodes, degree=3, seed=1)
-
+G = create_random_regular_graph(num_nodes, degree=3, seed=1)
 
 qaoa = qaoa_qutip(G, 
                   shots = shots, 
                   gate_noise = gate_noise,
                   problem = problem)
-
-
-
 
 
 gs_energy, gs_state, degeneracy = qaoa.gs_en, qaoa.gs_states, qaoa.deg
@@ -77,20 +60,14 @@ print('GS energy: ',gs_energy)
 print('GS binary:', qaoa.gs_binary)
 print('GS degeneracy: ', degeneracy)
 
-print('GS :', qaoa.gs_states[0])
-print('ham :, ', qaoa.H_c)
-
-DEFAULT_PARAMS["seed"] = seed + i_trial
-
 ########### CREATE GP AND FIT TRAINING DATA  #####################
 
-
 const_kern = ConstantKernel(
-                            constant_value = 1.1,
-                            constant_value_bounds = DEFAULT_PARAMS['constant_bounds']
+                            constant_value = DEFAULT_PARAMS['initial_kernel_constant'],
+                            constant_value_bounds = DEFAULT_PARAMS['kernel_constant_bounds']
                             )
 mat_kern = Matern(
-                  length_scale=0.11, 
+                  length_scale=DEFAULT_PARAMS['initial_length_scale'], 
                   length_scale_bounds=DEFAULT_PARAMS['length_scale_bounds'], 
                   nu=1.5
                   )
@@ -112,25 +89,11 @@ print('Created gaussian process istance with starting kernel')
 print(gp.kernel)
 X_train, y_train = qaoa.generate_random_points(nwarmup, depth, param_range)
 
-print('Random generated X train:', X_train)
-print('With energies: ', y_train)
-print('\n\n\n')
+print('Generated random X train')
 gp.fit(X_train, y_train)
-print(gp.get_covariance_matrix())
 
-#gp.get_acquisition_function(show = True, save = False)
-print('Just fitted data_ so now we have kernel and kernel_: ')
-print(gp.kernel)
+print('kernel after fitting: ')
 print(gp.kernel_)
-
-print('\n\n')
-print('Now covariance LL^\dag:')
-print('or')
-print(gp.get_covariance_matrix_cholesky())
-print('\ncompared to')
-print(gp.get_covariance_matrix())
-
-
 
 ############### CREATE DATA ###############
 
@@ -212,12 +175,10 @@ for i_tr, x in enumerate(X_train):
     
     data_.append(new_data)
                 
-print('groundstate :',qaoa.gs_en)
 folder_name = file_name.split('.')[0]
 folder = os.path.join(output_folder, folder_name)
 os.makedirs(folder, exist_ok = True)
 data_header = " ".join(["{:>7} ".format(i) for i in results_data_names])
-
 
 ########    BAYESIAN OPTIMIZATION   #############
 
@@ -242,6 +203,9 @@ for i in range(nbayes):
     y_next_point = mean_energy
     fidelity = fidelity_tot
     approx_ratio = mean_energy/qaoa.gs_en
+    
+    
+    #### STUFF for log likelihood etc... ERASE?? ####
     # if depth <2:
 #         acq_func = gp.get_acquisition_function(show = False, save = True)
 #         acq_funcs.append(acq_func)
@@ -252,7 +216,8 @@ for i in range(nbayes):
     #kernel_matrices.append(k_matrix)
     
     #kernel_opts.append(gp.samples)
-        
+    
+    #############################
         
     #### FIT NEW POINT #####
     gp.fit(next_point, y_next_point)
@@ -271,7 +236,6 @@ for i in range(nbayes):
         best_approx_ratio = approx_ratio
         
     kernel_time = time.time() - start_time - qaoa_time - bayes_time
-    print('\nKernel', gp.kernel_)
     step_time = time.time() - start_time
     
     new_data = ([i + 1] +
@@ -298,12 +262,15 @@ for i in range(nbayes):
     if len(gp.kernel_.theta) > 2:
         new_data += [noise_kernel]
     data_.append(new_data)
+    print('\nKernel', gp.kernel_)
     print(f'{i +1}/{nbayes}, en: {mean_energy}, var: {variance}, '
           f'fid: {fidelity_tot},\n {next_point}')
     
     df = pd.DataFrame(data = data_, columns = results_data_names)
     df.to_csv(folder + "/" + file_name , columns = results_data_names, header = data_header)
     
+    
+    #### STUFF for saving log likelihood etc... ERASE?? ####
    #  if diff_evol_func == None:
 #         np.save(folder +"/"+ "kernel_opt".format(i), np.array(kernel_opts, dtype = object))
 #     else:
@@ -311,7 +278,8 @@ for i in range(nbayes):
 #     np.save(folder +"/"+ "log_marg_likelihoods".format(i), np.array(log_likelihood_grids,  dtype = object))
 #     #np.save(folder +"/"+ "kernel_matrices".format(i), np.array(kernel_matrices, dtype = object))
 #     np.save(folder +"/"+ "acq_funcs".format(i), np.array(acq_funcs, dtype = object))
-
+     
+     #############################
 
 
 

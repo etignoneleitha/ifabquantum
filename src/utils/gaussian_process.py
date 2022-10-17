@@ -60,7 +60,7 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         self.seed = DEFAULT_PARAMS["seed"]
         self.mcmc_samples = []
         self.samples = []
-        self.average_kernel_params = [DEFAULT_PARAMS['initial_length_scale'], DEFAULT_PARAMS['initial_sigma']]
+        self.average_kernel_params = [DEFAULT_PARAMS['initial_length_scale'], DEFAULT_PARAMS['initial_kernel_constant']]
         self.std_kernel_params = [0,0]
         self.diff_evol_func = diff_evol_func
 
