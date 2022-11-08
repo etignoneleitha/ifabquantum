@@ -9,6 +9,8 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel, Matern, ConstantKernel
 from sklearn.utils.optimize import _check_optimize_result
 from scipy.special import ndtr
+from typing import List, Tuple, Union
+
 
 
 
@@ -16,25 +18,26 @@ from scipy.special import ndtr
 # It can be straightforwardly extended to other parameters
 class MyGaussianProcessRegressor(GaussianProcessRegressor):
     
-    def __init__(self, angles_bounds, gtol, max_iter, *args, **kwargs):
-        '''Initializes gaussian process class
+    def __init__(self, 
+                 angles_bounds: Tuple,
+                 gtol: float, 
+                 max_iter: int, 
+                 *args, 
+                 **kwargs) -> None:
+        """Initializes gaussian process class.
 
-        The class also inherits from Sklearn GaussianProcessRegressor
-        Attributes for MYgp
-        --------
-        angles_bounds : range of the angles beta and gamma
-
-        gtol: tolerance of convergence for the optimization of the kernel parameters
-
-        max_iter: maximum number of iterations for the optimization of the kernel params
-
-        Attributes for SKlearn GP:
-        ---------
-
-        *args, **kwargs: kernel, optimizer_kernel,
-                         n_restarts_optimizer (how many times the kernel opt is performed)
-                         normalize_y: standard is yes
-        '''
+        Args:
+            angles_bounds : range of the angles beta and gamma.
+            gtol: tolerance of convergence for the optimization of the 
+                  kernel parameters.
+            max_iter: maximum number of iterations for the optimization of the 
+                      kernel parameters.
+                      
+            *args, **kwargs: The parameters passed to the sklearn class for GP:
+                                kernel, optimizer_kernel, n_restarts_optimizer 
+                                (how many times the kernel opt is performed)
+                                normalize_y: default is yes.
+        """
         alpha = 10e-10
         super().__init__(alpha = alpha, *args, **kwargs)
         self.max_iter = max_iter
@@ -48,9 +51,8 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         self.samples = []
 
     def get_info(self):
-        '''
-        Returns a dictionary of infos on the  gp to print
-        '''
+        """Returns a dictionary of infos on the  gp to print
+        """
         info ={}
         info['param_range'] = self.angles_bounds
         info['acq_fun_optimization_max_iter'] = self.max_iter
@@ -64,7 +66,12 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
 
         return info
 
-    def print_info(self, f):
+    def print_info(self, f) -> None:
+        """Prints information on the passed file f
+        
+        Args:
+            f: file on which to write the info
+        """
         f.write(f'parameters range: {self.angles_bounds}\n')
         f.write(f'acq_fun_optimization_max_iter: {self.optimizer}\n')
         f.write(f'seed: {self.seed}\n')
@@ -77,19 +84,25 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         f.write('\n')
 
     def _constrained_optimization(self,
-                                  obj_func,
-                                  initial_theta,
-                                  bounds):
-        '''
-        Overrides the super()._constrained_optimization to perform otpimization of the kernel
-        parameters by maximizing the log marginal likelihood.
+                                  obj_func: callable,
+                                  initial_theta: float,
+                                  bounds: Tuple) -> Tuple[float, float]:
+                                  
+        """Overrides the super()._constrained_optimization to perform otpimization 
+        of the kernel parameters by maximizing the log marginal likelihood.
         It is only called by super().fit, so at every fitting of the training points
         or at a new bayesian opt step. Options for the optimization are fmin_l_bfgs_b,
-        differential_evolution or monte_carlo. The latter just averages over M = 30 values
-        of the hyperparameters and returns this average.
-
-        Do not change the elif option
-        '''
+        differential_evolution.
+        
+        Args:
+            obj_func: the func to minimize.
+            initial_theta: starting point for the optimization.
+            bounds: bounds of the optimization.
+            
+        Returns:
+            The optimal parameters and the minimum of the function.
+            
+        """
 
         def obj_func_no_grad(x):
                 return  obj_func(x)[0]
@@ -140,18 +153,22 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
             raise ValueError("Unknown optimizer %s." % self.optimizer)
         return theta_opt, func_min
 
-    def fit(self, new_point, y_new_point):
-        '''Fits the GP to the new point(s)
+
+    def fit(self, new_point: List[float], 
+                  y_new_point: Union[float, List[float]]
+                  ) -> None:
+        """Fits the GP to the new point(s).
 
         Appends the new data to the myGP instance and keeps track of the best X and Y.
         Then uses the inherited fit method which optimizes the kernel (by maximizing the
         log marginal likelihood) with kernel_optimizer for 1 + n_restart_optimier_kernel
         times and keeps the best value. All points are scaled down to [0,1]*depth.
 
-        Attributes
-        ---------
-        new_point, y_new_point: either list or a single new point with their/its energy
-        '''
+        Args:
+            new_point: either list or a single new point.
+            y_new_point: the energy of new_point.
+            
+        """
         new_point = self.scale_down(new_point)
 
         if isinstance(new_point[0], float): #check if its only one point
@@ -171,8 +188,12 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
 
         super().fit(self.X, self.Y)
 
-    def scale_down(self, point):
-        'Rescales a(many) point(s) from angles bounds to [0,1]'
+    def scale_down(self, point: List[float]) -> List[float]:
+        """Rescales a(many) point(s) from angles bounds to [0,1].
+        
+        Args:
+            point: point to rescale.
+        """
 
         min_gamma, max_gamma=self.angles_bounds[0]
         min_beta,  max_beta = self.angles_bounds[1]
@@ -198,8 +219,12 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         return norm
 
 
-    def scale_up(self, point):
-        'Rescales a(many)point(s) from [0,1] to angles bounds'
+    def scale_up(self, point: List[float]) -> List[float]:
+        """Rescales a(many) point(s) from [0, 1] to angle bounds.
+        
+        Args:
+            point: point to rescale.
+        """
 
         min_gamma, max_gamma=self.angles_bounds[0]
         min_beta,  max_beta = self.angles_bounds[1]
@@ -223,21 +248,30 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
 
         return norm
 
-    def get_best_point(self):
-        '''Return the current best point with its energy and position'''
+    def get_best_point(self) -> Tuple[List[float], float, int]:
+        """Return the current best point with its energy and position.
+        
+        Returns:
+            The best set of angles found so far by the optimization, their 
+            energy and their position in the list of visited points.
+        """
+        
         x_best = self.scale_up(self.x_best)
         where = np.argwhere(self.y_best == np.array(self.Y))
         return x_best, self.y_best, where[0,0]
 
-    def acq_func(self, x, *args):
-        '''Expected improvement at point x
+    def acq_func(self, x: List[float], *args) -> float:
+        """Expected improvement at point x.
 
-        Arguments
-        ---------
-        x: point of the prediction
-        *args: the sign of the acquisition function (in case you have to minimize -acq fun)
+        Args:
+            x: point of the prediction.
+            *args: the sign of the acquisition function (in case you have 
+                    to minimize -acq fun).
+                    
+        Returns:
+            Value of the acquisition function.
 
-        '''
+        """
         try:
             sign = args[0]
         except:
@@ -259,23 +293,25 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
 
 
 
-    def bayesian_opt_step(self, method = 'DIFF-EVOL', init_pos = None):
-        ''' Performs one step of bayesian optimization
+    def bayesian_opt_step(self, 
+                          method: str = 'DIFF-EVOL', 
+                          init_pos: List[float] = None) -> Tuple[List[float],
+                                                                 int,
+                                                                 float,
+                                                                 float]:
+        """Performs one step of bayesian optimization using the specified 
+        method to maximize the acquisition function.
 
-        It uses the specified method to maximize the acquisition function
+        Args:
+            method: differential-evolution chosen by default at the moment.
 
-        Attributes
-        ----------
-        method: choice between grid search (not available for depth >1), hamiltonian monte
-                carlo, finite differences gradient, scipy general optimization, diff evolution
-
-        Returns (for diff evolution)
-        -------
-        next_point: where to sample next (rescaled to param range)
-        nit: number of iterations of the diff evolution algorithm
-        avg_norm_dist_vect: condition of convergence for the positions
-        std_pop_energy: condition of convergence for the energies
-        '''
+        Returns:
+            next_point: where to sample next (rescaled to param range).
+            nit: number of iterations of the diff evolution algorithm.
+            avg_norm_dist_vect: condition of convergence for the positions.
+            std_pop_energy: condition of convergence for the energies.
+        """
+        
         depth = int(len(self.X[0])/2)
 
         samples = []
@@ -296,16 +332,28 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
                 results,average_norm_distance_vectors, std_population_energy, conv_flag = diff_evol.solve()
             next_point = results.x
         next_point = self.scale_up(next_point)
+        
         return next_point, results.nit, average_norm_distance_vectors, std_population_energy
 
-    def get_covariance_matrix(self):
+    def get_covariance_matrix(self) -> Tuple[np.ndarray, np.ndarray]:
+        """ Returns the covariance matrix of the Gaussian Process
+        
+        Returns:
+            The matrix K with its eigenvalues
+        """
         K = self.kernel_(self.X)
         K[np.diag_indices_from(K)] += self.alpha
         eigenvalues, eigenvectors = np.linalg.eig(K)
         
         return K, eigenvalues
         
-    def plot_covariance_matrix(self, show = True, save = False):
+    def plot_covariance_matrix(self, show:bool = True, save:bool = False) -> None:
+        """Plots the covariance matrix
+        
+        Args:
+            show: if needs to show image
+            save: if needs to save
+        """
         K = self.get_covariance_matrix()
         fig = plt.figure()
         im = plt.imshow(K, origin = 'upper')
@@ -315,7 +363,15 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         if show:
              plt.show()
 
-    def plot_posterior_landscape(self, show = True, save = False):
+    def plot_posterior_landscape(self, show:bool = True, save:bool = False) -> None:
+    
+        """Plots the mean of the Gaussian Process at the current iteration.
+        
+        Args:
+            show: if needs to show image
+            save: if needs to save
+        """
+        
         if len(self.X[0]) > 2:
             raise ValueError(
                         "Non si puo plottare il landscape a p>1"
@@ -339,7 +395,13 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         plt.show()
 
 
-    def get_acquisition_function(self, show = True, save = False):
+    def get_acquisition_function(self, show:bool = True, save:bool = False) -> np.ndarray:
+        """Calculates the acquisition function at the current iteration.
+        
+        Args:
+            show: if needs to show image
+            save: if needs to save
+        """
         if len(self.X[0]) > 2:
             raise ValueError(
                         "Non si puo plottare l'AF a p>1"
@@ -372,7 +434,13 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         
         return x
     
-    def plot_log_marginal_likelihood(self, show = False, save = False):
+    def plot_log_marginal_likelihood(self, show:bool = False, save:bool = False) -> None:
+        """Plots the log marginal likelihood at the current iteration.
+        
+        Args:
+            show: if needs to show image
+            save: if needs to save
+        """
         fig = plt.figure()
         num = 50
         x = np.zeros((num, num))
@@ -395,7 +463,13 @@ class MyGaussianProcessRegressor(GaussianProcessRegressor):
         if show:
             plt.show()
 
-    def get_log_marginal_likelihood_grid(self, show = False, save = False):
+    def get_log_marginal_likelihood_grid(self, show = False, save = False) -> np.ndarray:
+        """Calculates the log marginal likelihood at the current iteration.
+        
+        Args:
+            show: if needs to show image
+            save: if needs to save
+        """
         num = 50
         x = np.zeros((num, num))
         min_x = np.log(DEFAULT_PARAMS['length_scale_bounds'][0])

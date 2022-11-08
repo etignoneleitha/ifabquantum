@@ -15,14 +15,28 @@ from  utils.default_params import *
 from matplotlib import pyplot as plt
 from utils.default_params import *
 
+from typing import List, Tuple, Union
+
 
 
 class qaoa_qutip(object):
 
-    def __init__(self, G, 
-                    shots = None, 
-                    problem="MIS", 
-                    gate_noise = None):
+    def __init__(self, 
+                    G: nx.networkx, 
+                    shots: Union[str, float] = None, 
+                    problem: str = "MIS", 
+                    gate_noise: Union[str, float] = None) -> None:
+        
+        """Initializes a class that simulates a qaoa circuit to solve a problem
+        on a graph with qutip.
+        
+        Args:
+            G: graph
+            shots: number of shots to estimate the energy of qaoa
+            problem: name of the problem to solve
+            gate_noise: amount of noise to add to each gate
+            
+        """
         self.shots = shots
         self.gate_noise = gate_noise
         self.problem = problem
@@ -78,44 +92,115 @@ class qaoa_qutip(object):
         self.gs_binary = self.binary_gs(gs_states)
 
 
-    def binary_gs(self, gs_states):
+    def binary_gs(self, gs_states: List[qu.Qobj]) -> List[str]:
+        """Convert Qobj ground state into a bitstring.
+        
+        Args:
+            gs_states : groundstates.
+        
+        Returns:
+            Groundstates written as bitstrings.
+        """
+        
         gs_binary = []
+        
         for gs in gs_states:
             pos = np.where(np.real(gs.full()))[0][0]
             gs_binary.append(np.binary_repr(pos, width=self.N))
+        
         return gs_binary
 
 
-    def Rx(self, qubit_n, alpha):
+    def Rx(self, qubit_n: int, alpha: float) -> qu.Qobj:
+        """Creates X-rotation operator.
+        
+        Args:
+            qubit_n : position of the qubit.
+            alpha: angle of rotation.
+        
+        Returns:
+            Rx(alpha) acting on qubit_n.
+        """
         op = np.cos(alpha) * self.Id -1j * np.sin(alpha) * self.X[qubit_n]
+        
         return op
 
 
-    def Rz(self, qubit_n, alpha):
+    def Rz(self, qubit_n: int, alpha: float) -> qu.Qobj:
+        """Creates Z-rotation operator.
+        
+        Args:
+            qubit_n : position of the qubit.
+            alpha: angle of rotation.
+        
+        Returns:
+            Rz(alpha) acting on qubit_n.
+        """
+        
         op = np.cos(alpha) * self.Id -1j * np.sin(alpha) * self.Z[qubit_n]
-        return qu.tensor(temp)
+        return op
 
 
-    def Rzz(self, qubit_n, qubit_m, alpha):
+    def Rzz(self, qubit_n: int, qubit_m: int, alpha: float) -> qu.Qobj:
+        """Creates Rzz-rotation operator.
+        
+        Args:
+            qubit_n : position of the first qubit.
+            qubit_m : position of the second qubit
+            alpha: angle of rotation.
+        
+        Returns:
+            Rzz(alpha) acting on qubit_n and qubit_m.
+        """
+        
         op = (np.cos(alpha) * self.Id
               -1j * np.sin(alpha) * self.Z[qubit_n] * self.Z[qubit_m])
+        
         return op
 
 
-    def Rxx(self, qubit_n, qubit_m, alpha):
+    def Rxx(self, qubit_n: int, qubit_m: int, alpha: float) -> qu.Qobj:
+        """Creates Rxx-rotation operator.
+        
+        Args:
+            qubit_n : position of the first qubit.
+            qubit_m : position of the second qubit
+            alpha: angle of rotation.
+        
+        Returns:
+            Rxx(alpha) acting on qubit_n and qubit_m.
+        """
+        
         op = (np.cos(alpha) * self.Id
               -1j * np.sin(alpha) * self.X[qubit_n] * self.X[qubit_m])
         return op
 
 
-    def U_mix(self, beta):
+    def U_mix(self, beta: float) -> qu.Qobj:
+        """Creates the mixing operator.
+        
+        Args:
+            beta: the angle of rotation.
+            
+        Returns:
+            X(beta) applied to all qubits.
+        """
+        
         U = self.Id
         for qubit_n in range(self.N):
             U = self.Rx(qubit_n, beta) * U
         return U
 
 
-    def U_c(self, gamma):
+    def U_c(self, gamma: float) -> qu.Qobj:
+        """Creates the evolution operator.
+        
+        Args:
+            gamma: the angle of rotation.
+            
+        Returns:
+            Evolution operator of the system under the problem hamiltonian .
+        """
                     
         evol_op = []
         
@@ -138,8 +223,19 @@ class qaoa_qutip(object):
 
         return U
 
-    def noisy_hamiltonian(self, gate_noise):
-    
+    def noisy_hamiltonian(self, gate_noise: float) -> qu.Qobj:
+        """Creates problem hamiltonian with noise.
+        
+           Gaussian noise centered at 1 with variance gate_noise 
+           is added on each operator.
+        
+        Args:
+            gate_noise: noise variance.
+            
+        Returns:
+            Hamiltonian operator of the problem with noise.
+        
+        """
         H_simulation  = 0
         
         if self.problem == "MIS":
@@ -171,52 +267,57 @@ class qaoa_qutip(object):
                                           len(self.G.edges))
             H_int = [link_noise[k]*(self.Id - self.Z[i] * self.Z[j]) / 2 for k, (i,j) in  enumerate(self.G.edges)]
             H_simulation = -1 * sum(H_int)
-            
-            
-                    
         
         return H_simulation
 
 
-    def gibbs_obj_func(self, eta):
-        # Gibbs objective function
-        eigen_energies = np.diagonal(self.H_c)
-        evol_op = []
-        for j_state, el in enumerate(eigen_energies):
-            bin_state = np.binary_repr(j_state, self.N)
-            eigen_state =  qu.tensor([qu.basis(2, int(e_state)) for e_state in bin_state])
-            evol_op.append(np.exp(-1 * eta * el) * eigen_state * eigen_state.dag())
-        gibbs = sum(evol_op)
-
-        return gibbs
-
-
-    def s2z(self, configuration):
+    def s2z(self, configuration: str) -> str:
+        """"Converts sequences of 0's and 1's into +1's and -1's.
+        
+        Args:
+            configuration: the sequence of 0 and 1.
+        
+        Returns:
+            Sequence where each 0 is a +1 and each 1 is a -1.
+        """
+        
         return [1 - 2 * int(s) for s in configuration]
 
 
-    def z2s(self, configuration):
+    def z2s(self, configuration: str) -> str:
+        """"Converts sequences of +1's and -1's into 0's and -1's.
+        
+        Args:
+            configuration: the sequence of +1 and -1.
+        
+        Returns:
+            Sequence where each +1 is a 0 and each -1 is a 1.
+        """
+        
         return [(1-z)/2 for z in configuration]
 
-
-    def str2list(self, s):
-        list_conf = []
-        skip = False
-        for x in s:
-            if skip:
-                skip = False
-                continue
-            if x == "-":
-                list_conf.append(-1)
-                skip = True
-            if x != "-":
-                list_conf.append(int(x))
-        return list_conf
-                
         
+    def hamiltonian_cost(self, 
+                         problem: str, 
+                         penalty: float) -> Tuple[qu.Qobj,
+                                                  List[qu.Qobj], 
+                                                  float,
+                                                  int,
+                                                  np.ndarray, 
+                                                  np.ndarray,
+                                                  List[qu.Qobj]]:
+                                                                      
+        """Creates the problem hamiltonian.
         
-    def hamiltonian_cost(self, problem, penalty):
+        Args:
+            problem: name between MIS, MAXCUT, ISING, ISING_TRANSV.
+            penalty: the penalty value for the MIS hamiltonian.
         
+        Returns
+            Tuple of operator hamiltonian, its groundstate, the energy of
+            the groundstate, its degeneracy, all the eigenstates, their 
+            energies and the projectors built with all the eigenstates.
+        """
         
         if problem == "MIS":
             H_0 = [-1*self.Z[i] / 2 for i in range(self.N)]
@@ -255,7 +356,17 @@ class qaoa_qutip(object):
         
         return H_c, gs_states, gs_en, degeneracy, eigenstates, energies, projectors
 
-    def classical_cost(self, bitstring, penalty=DEFAULT_PARAMS["penalty"]):
+    def classical_cost(self, bitstring: str, 
+                        penalty : float =DEFAULT_PARAMS["penalty"]) -> float:
+        """ Calculates the classical cost of a bit string depending on the problem.
+        
+        Args:
+            bitstring : string of bits
+            penalty: penalt of the problem (if it is MIS)
+            
+        Returns:
+            classical cost
+        """
     
               
         spin_string = self.s2z(bitstring)
@@ -275,10 +386,20 @@ class qaoa_qutip(object):
         
 
     def quantum_algorithm(self,
-                          params,
-                          obj_func="energy",
-                          penalty=DEFAULT_PARAMS["penalty"]):
-
+                          params: np.ndarray,
+                          penalty: float = DEFAULT_PARAMS["penalty"]
+                          ) -> Tuple[qu.Qobj, float, float, float]:
+                          
+        """Runs the QAOA algorithm with given parameters.
+        
+        Args:
+            params: gamma and beta parameters rotation of the gates
+            penalty: penalty for the MIS problem
+            
+        Returns:
+            The state obtained at the end of the QAOA circuit with its
+            energy, its variance and its fidelity
+        """
         depth = int(len(params)/2)
         gammas = params[::2]
         betas = params[1::2]
@@ -307,14 +428,9 @@ class qaoa_qutip(object):
 
             fidelity_tot = np.sum(fidelities)
             
-           
-            if obj_func == "energy":
-                return state_0, mean_energy, variance, fidelity_tot
+            
+            return state_0, mean_energy, variance, fidelity_tot
 
-            elif obj_func == "gibbs":
-                gibbs_op = self.gibbs_obj_func(eta=2)
-                mean_gibbs = -np.log(qu.expect(gibbs_op, state_0))
-                return state_0, mean_gibbs, variance, fidelity_tot
             
         else:
             prob_each_state = np.array([np.real(x.conj() * x) for x in state_0.full()]).squeeze()
@@ -353,11 +469,23 @@ class qaoa_qutip(object):
             
 
     def generate_random_points(self,
-                               N_points,
-                               depth,
-                               angles_bounds,
-                               fixed_params=None):
-                               
+                               N_points: int,
+                               depth: int,
+                               angles_bounds: Tuple
+                               ) -> Tuple[np.ndarray, np.ndarray]:
+        
+        """Generates N_points random point distributed in the parameter space
+        defined by the angle_bounds with a latin hypercube sampler.
+        
+        Args:
+            N_points: number of points to generate.
+            depth: depth of the QAOA circuit.
+            angles_bounds: bounds of the points to generate.
+            
+        Returns:
+            Points with their associated QAOA energy.
+        """
+         
         np.random.seed(DEFAULT_PARAMS['seed'])
         random.seed(DEFAULT_PARAMS['seed'])
         X = []
@@ -374,12 +502,26 @@ class qaoa_qutip(object):
             state_0, mean_energy, variance, fidelity_tot = self.quantum_algorithm(x)
             Y.append(mean_energy)
             
-        print(X, Y)
-
         return X, Y
         
-    def get_landscape(self, angle_bounds, num, verbose = 0):
-    
+    def get_landscape(self, 
+                      angle_bounds: Tuple, 
+                      num: int
+                      ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        
+        """Runs QAOA at p=1 on a grid (num, num) in the limits given by 
+        angle_bounds.
+        
+        Args:
+            angle_bounds: bounds of the grid.
+            num: refinement of the grid.
+        
+        Returns:
+            Energies, fidelities and variances at each combination of angles
+            of the grid.
+        
+        """
+        
         fig = plt.figure()
         energies = np.zeros((num, num))
         fidelities = np.zeros((num, num))
@@ -392,18 +534,20 @@ class qaoa_qutip(object):
                 energies[j, i] = en
                 fidelities[j, i] = fid
                 variances[j, i] = var
-                if verbose:
-                    print(f'\u03B3: {i+1}/num, \u03B2: {j+1}/num')
         
         return energies, fidelities, variances
         
-    def classical_solution(self, save = False):
-        '''
-        Runs through all 2^n possible configurations and returns the solution
+    def classical_solution(self, save: bool = False) -> Tuple[dict, float, dict]:
+        """Runs through all 2^n possible configurations and returns the 
+           classical solution of the problem.
+        
+        Args:
+            save: decide to save to file the information
         Returns: 
-            d: dictionary with {[bitstring solution] : energy}
-            en: energy of the (possibly degenerate) solution
-        '''
+            A dictionary with the energy of each solution bitstring, the energy
+            of the solution a dictionary of the first excited states with their
+            energies. 
+        """
         results = {}
 
         string_configurations = list(product(['0','1'], repeat=len(self.G)))
